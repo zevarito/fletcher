@@ -36,6 +36,14 @@ scenario("Define", {
         g.assertFunction(b.walk)
       }
     )
+  },
+
+  "should not accept anonymous modules": function (g) {},
+
+  "should be able to define object literals": function (g) {
+    define("apple", { color: "red" })
+    var apple = fletcher.require('apple')
+    g.assertEqual(apple.color, "red")
   }
 })
 
