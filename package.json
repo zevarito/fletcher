@@ -1,0 +1,21 @@
+{
+  "author": "Alvaro Gil <zevarito@gmail.com>",
+  "name": "fletcher",
+  "description": "Javascript Module Loader",
+  "version": "0.0.0",
+  "homepage": "https://github.com/zevarito/fletcher.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/zevarito/fletcher.js.git"
+  },
+  "main": "./src/fletcher.js",
+  "scripts": {
+    "test": "node test/run.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
