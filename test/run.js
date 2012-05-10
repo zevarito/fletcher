@@ -1,27 +1,32 @@
 scenario = require('gerbil').scenario
 
 fletcher = require('../src/fletcher')
-define = fletcher.exportVariables(this).define
 
 scenario("Fletcher", {
 
-  "Fletcher should exist!": function (g) {
+  "should define define global": function (g) {
+    g.assert(define)
+  },
+
+  "should define fletcher global": function (g) {
     g.assert(fletcher)
-    //g.assert(module.exports.fletcher)
   }
 })
 
-scenario("Defining modules", {
+scenario("Requiring modules", {
 
-  "It should pass the module as first argument": function (g) {
+  "It should return the defined module": function (g) {
+
+    var m
 
     define("my_module", function(my_module) {
       my_module.doesGreatThing = function() {}
+      m = my_module
     })
 
     var my_module = fletcher.require('my_module')
 
-    g.assert(my_module)
-    g.assert(typeof my_module.doesGreatThing === "function")
+    g.assertEqual(my_module, m)
+    g.assertEqual(typeof my_module.doesGreatThing, "function")
   }
 })
