@@ -53,19 +53,23 @@ fletcher = (function () {
     //
     define: function() {
 
+      // We are never finish when a module is beign defined.
+      this.completed = false
+
       var args = Array.prototype.slice.call(arguments)
 
       var key = args[0],
           dependencies = args.slice(1, -1),
           body = args.slice(-1)[0]
 
+      originalDependencies = dependencies.slice(0)
       dependencies = this.rejectSolvedDependencies(dependencies)
 
       // Module
       this.tree[key] = {
         key: key,
         namespace: null,
-        originalDependencies: dependencies.slice(0),
+        originalDependencies: originalDependencies,
         dependencies: dependencies,
         body: body,
         loaded: false

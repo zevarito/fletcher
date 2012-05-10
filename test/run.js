@@ -1,6 +1,16 @@
-scenario = require('gerbil').scenario
+gerbil = require('gerbil')
 
 fletcher = require('../src/fletcher')
+
+gerbil.Test.prototype.assertFunction = function(fn) {
+  if(typeof fn === "undefined") {
+    throw Gerbil.Error("Assertion Failed: Is not a Function");
+  } else {
+    this.assertions++;
+  }
+}
+
+scenario = gerbil.scenario
 
 scenario("Fletcher", {
 
@@ -13,9 +23,25 @@ scenario("Fletcher", {
   }
 })
 
-scenario("Requiring modules", {
+scenario("Define", {
 
-  "It should return the defined module": function (g) {
+  "should pass dependencies as arguments": function (g) {
+
+    define("module_a", function(m) { m.jump = function() {} })
+    define("module_b", function(m) { m.walk = function() {} })
+
+    define("module_c", "module_a", "module_b",
+      function(c, a, b) {
+        g.assertFunction(a.jump)
+        g.assertFunction(b.walk)
+      }
+    )
+  }
+})
+
+scenario("Require", {
+
+  "should return the required module": function (g) {
 
     var m
 
@@ -27,6 +53,5 @@ scenario("Requiring modules", {
     var my_module = fletcher.require('my_module')
 
     g.assertEqual(my_module, m)
-    g.assertEqual(typeof my_module.doesGreatThing, "function")
   }
 })
