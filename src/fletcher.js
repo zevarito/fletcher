@@ -231,20 +231,6 @@ fletcher = (function () {
       }
     },
 
-    // DEPRECATED?
-    //
-    // Iterate over an object to find out if it is empty or not
-    //
-    // Returns Boolean.
-    //
-    empty: function (obj) {
-      for (var key in obj) {
-        if (obj[key] !== undefined) return false
-      }
-
-      return true
-    },
-
     // Reject already resolved dependencies for an array
     // of dependencies.
     // This method is used when a new module is registered in the tree.
