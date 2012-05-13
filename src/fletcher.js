@@ -379,19 +379,24 @@ fletcher = (function () {
     }
   }
 
-  // Exports
-  //
+  // Export globals
+  // FIXME: This is little crap, also needs propertly documentation.
   this.define = function() { return fletcher.define.apply(fletcher, arguments) }
   this.require = function() { return fletcher.require.apply(fletcher, arguments) }
 
-  if (fletcher.isCommonJs()) {
-    module.exports.define = this.define
-    module.exports.fletcher = {define: this.define, require: this.require}
-  } else {
-    define = this.define
-    require = this.require
+  var interface = {
+    define: this.define,
+    require: this.require
   }
 
-  return this
+  if (fletcher.isCommonJs()) {
+    module.exports.define = interface.define
+    module.exports.fletcher = interface
+  } else {
+    define = interface.define
+    require = interface.require
+  }
+
+  return interface
 
 }).call(this)
