@@ -1,5 +1,21 @@
 <html>
   <head>
-    <script type="text/javascript" src=""></script>
+    <!--- load Gerbil for tests -->
+    <script type="text/javascript" src="./vendor/gerbil/lib/gerbil.js"></script>
+
+    <!--- load Fletcher -->
+    <script type="text/javascript" src="../src/fletcher.js"></script>
+
+    <script type="text/javascript">
+      if (typeof Gerbil !== "undefined")
+        console.log("Gerbil included through <script> tag")
+
+      if (typeof fletcher !== "undefined")
+        console.log("Fletcher included through <script> tag")
+
+    </script>
+
+    <!--- load Fletcher Tests -->
+    <script type="text/javascript" src="./browser_test.js"></script>
   </head>
 </html>

@@ -10,7 +10,7 @@
   },
   "main": "./src/fletcher.js",
   "scripts": {
-    "test": "node test/run.js"
+    "test": "node test/server_test.js; phantomjs test/browser_runner.js"
   },
   "dependencies": {},
   "devDependencies": {},

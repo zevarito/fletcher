@@ -1,16 +1,12 @@
-phantom = require('phantom')
+scenario = Gerbil.scenario
 
-phantom.create(function (ph) {
-  ph.createPage(function (page) {
-    page.open("./test/browser_context.html", function (status) {
+scenario("Fletcher", {
 
-      if (status === "success") {
-        console.log(status)
-      } else {
-        console.log(status)
-      }
+  "should define define global": function (g) {
+    g.assert(define)
+  },
 
-      ph.exit()
-    })
-  })
+  "should define fletcher global": function (g) {
+    g.assert(fletcher)
+  }
 })
