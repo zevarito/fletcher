@@ -1,0 +1,3 @@
+[submodule "test/vendor/gerbil"]
+	path = test/vendor/gerbil
+	url = git://github.com/elcuervo/gerbil.git
