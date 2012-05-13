@@ -38,7 +38,9 @@ scenario("Define", {
     )
   },
 
-  "should not accept anonymous modules": function (g) {},
+  "should not accept anonymous modules": function (g) {
+    g.pending("Are we going to do this after all?")
+  },
 
   "should be able to define object literals": function (g) {
     define("apple", { color: "red" })
