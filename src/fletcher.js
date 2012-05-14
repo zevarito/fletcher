@@ -387,19 +387,19 @@ fletcher = (function () {
   this.define = function() { return fletcher.define.apply(fletcher, arguments) }
   this.require = function() { return fletcher.require.apply(fletcher, arguments) }
 
-  var interface = {
+  var _interface = {
     define: this.define,
     require: this.require
   }
 
   if (fletcher.isCommonJs()) {
-    module.exports.define = interface.define
-    module.exports.fletcher = interface
+    module.exports.define = _interface.define
+    module.exports.fletcher = _interface
   } else {
-    define = interface.define
-    require = interface.require
+    define = _interface.define
+    require = _interface.require
   }
 
-  return interface
+  return _interface
 
 }).call(this)
