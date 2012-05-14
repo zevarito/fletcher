@@ -91,9 +91,13 @@ define(name, [dep1..depX], function or Object)
 
 ### Dependencies
 
-- [Node](http://nodejs.org)
-- [PhantomJs](http://phantomjs.org)
-- [Gerbil](http://github.com/elcuervo/gerbil) as Node package
+- Test dependencies
+  - [Node](http://nodejs.org)
+  - [PhantomJs](http://phantomjs.org)
+  - [Gerbil](http://github.com/elcuervo/gerbil) as Node package
+
+- Build dependencies
+  - [Closure Compiler](http://closure-compiler.googlecode.com/)
 
 ### Run tests
 
