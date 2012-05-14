@@ -1,16 +1,31 @@
+# **Fletcher** is a lightweight unobtrusive Javascript module loader.
 
-- [Development](#development)
-- [Contributions](#contributions)
-- [License](#license)
-- [Authorship](#authorship)
+It features Async behavior on browser side and Sync behavior when used on the server. It aims to have the only
+requirement of being included before be used. This library is under heavy development and some API
+changes such as names of current `define` and `require` functions will change to avoid any kind of conflict with other
+module loaders such as [RequireJs](http://requirejs.org), so please if you use this in production enviroment know the risks.
+
+- [Examples] (#examples)
+  - [Defining Modules] (#defining-modules)
+     - [Object Literals] (#object-literals)
+     - [Function Wrapped] (#function-wrapped)
+     - [With Dependencies] (#with-dependencies)
+- [Api] (#api)
+- [Development] (#development)
+- [Contributions] (#contributions)
+- [License] (#license)
+- [Authorship] (#authorship)
+
+
+## Examples
 
 ## Defining Modules
 
-```js
-define(name, [dep1..depX], function or Object)
-```
-
 ### Object Literals
+
+Object literals are the most basic form of modules.
+You just need to pass a Javascript object as second argument and thas it,
+the whole object will become `public` and full available to be used.
 
 ```js
 define("capuchino", {
@@ -21,13 +36,20 @@ define("capuchino", {
 require("capuchino") // {foam: "much", temperature: [Function]}
 ```
 
-### Function wrapped
+### Function Wrapped
+
+There is two ways to return an `interface`, this will become the `public` access to the module.
+
+a) Implement the first argument passed will become your module `interface` definition.
 
 ```js
 define("capuchino", function (capuchino) {
   // implement capuchino, it will be the module exported.
 };
+```
+b) Return an `object` will become your module `interface` definition.
 
+```js
 define("capuchino", function () {
   // implement capuchino
 
@@ -37,7 +59,7 @@ define("capuchino", function () {
 });
 ```
 
-### Dependencies
+### With Dependencies
 
 ```js
 define("ingredients", function (ingredients) {
@@ -51,6 +73,19 @@ define("capuchino", "ingredients", function (capuchino, ingredients) {
   }
 });
 ```
+## API
+
+### define
+
+```js
+define(name, [dep1..depX], function or Object)
+```
+
+`name` is a required.
+
+`[dep1..depX]` A comma separated list of dependencies as strings.
+
+`function or Object` Module definition.
 
 ## Development
 
@@ -112,3 +147,4 @@ Please refer to LICENSE file for more details.
 [Alvaro Gil](http://github.com/zevarito)
 
 [Cubox](http://cuboxlabs.com)
+
