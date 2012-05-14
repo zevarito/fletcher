@@ -2,7 +2,10 @@ fletcher = (function () {
 
   var fletcher = {
 
-    async: false,
+    // Indicates if we will be using Fletcher in Async or Sync way.
+    // Running in the Browser the behavior will be Async.
+    // Running in server with NodeJs the behavior will be Sync.
+    async: !(typeof module !== 'undefined' && module.exports),
 
     mainContext: {},
 
