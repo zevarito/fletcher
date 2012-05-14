@@ -374,11 +374,6 @@ fletcher = (function () {
       }, this)
 
       return !fail
-    },
-
-    isCommonJs: function() {
-      (typeof module !== "undefined" &&
-          typeof module.exports !== "undefined") ? true : false
     }
   }
 
@@ -392,7 +387,8 @@ fletcher = (function () {
     require: this.require
   }
 
-  if (fletcher.isCommonJs()) {
+  if (!fletcher.async) {
+    define = _interface.define
     module.exports.define = _interface.define
     module.exports.fletcher = _interface
   } else {
