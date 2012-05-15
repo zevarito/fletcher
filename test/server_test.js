@@ -2,14 +2,6 @@ gerbil = require('./vendor/gerbil/lib/gerbil')
 
 fletcher = require('../src/fletcher')
 
-gerbil.Test.prototype.assertFunction = function(fn) {
-  if(typeof fn === "undefined") {
-    throw Gerbil.Error("Assertion Failed: Is not a Function");
-  } else {
-    this.assertions++;
-  }
-}
-
 scenario = gerbil.scenario
 
 scenario("Fletcher", {
