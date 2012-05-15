@@ -1,6 +1,7 @@
 //
 // Phantom.js script
 //
+//
 var fs = require('fs');
 
 var page = require('webpage').create()

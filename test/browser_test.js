@@ -34,5 +34,13 @@ scenario("Async", {
     define("myLib", "_", function (myLib, underscore) {
       g.assertEqual(underscore.isObject(myLib), true)
     })
+  },
+
+  "should wait for a whole dependency chain": function (g) {
+
+    define("namespace/myLib", "$", "_", "Backbone", function (myLib, jQ, underscore, backbone) {
+      var view = new backbone.View()
+      g.assertEqual(view.tagName, "div")
+    })
   }
 })
