@@ -1,4 +1,12 @@
-fletcher = (function () {
+(function () {
+
+  var logger = {
+    logInfo: false,
+
+    info: function (msg) {
+      if (this.logInfo) console.log(msg)
+    }
+  }
 
   var fletcher = {
 
@@ -149,7 +157,7 @@ fletcher = (function () {
         if (module.loaded)
           continue
 
-        console.log("Traverse: " + key)
+        logger.info("Traverse: " + key)
 
         // If the module has dependencies to load first.
         // Else load the module.
@@ -227,7 +235,7 @@ fletcher = (function () {
         module.loaded = true
 
         // Log it.
-        console.log("Loaded \"" + module.key + "\" as: " + (typeof module.body))
+        logger.info("Loaded \"" + module.key + "\" as: " + (typeof module.body))
 
         // Remove as dependency for other modules
         this.removeDependency(module.key)
@@ -348,7 +356,7 @@ fletcher = (function () {
 
       // Log Stuff
       var req = module.dependencies.length == 0 ? "none" : module.dependencies
-      console.log("Satisfying: \"" + module.key + "\" dependencies: " + req)
+      logger.info("Satisfying: \"" + module.key + "\" dependencies: " + req)
 
       module.dependencies.forEach(function(module_key) {
 
@@ -359,15 +367,15 @@ fletcher = (function () {
           else
             fail = true
         } else if(this.keyToNamespace(module_key, this.mainContext) !== undefined) {
-          console.log("Found: " + module_key)
+          logger.info("Found: " + module_key)
           this.removeDependency(module_key)
         } else {
           if (this.async) {
-            console.log("Missing: " + module_key)
+            logger.info("Missing: " + module_key)
             fail = true
           } else {
             // TODO: Pretty sure this blow up with two modules, let's see...
-            console.log("I'll find you: " + module_key)
+            logger.info("I'll find you: " + module_key)
             this.traverse()
           }
         }
@@ -377,25 +385,23 @@ fletcher = (function () {
     }
   }
 
-  // Export globals
-  // FIXME: This is little crap, also needs propertly documentation.
-  this.define = function() { return fletcher.define.apply(fletcher, arguments) }
-  this.require = function() { return fletcher.require.apply(fletcher, arguments) }
-
+  // Define fletcher interface
   var _interface = {
-    define: this.define,
-    require: this.require
+    define: function() { return fletcher.define.apply(fletcher, arguments) },
+    require: function() { return fletcher.require.apply(fletcher, arguments) },
+    logger: logger
   }
 
+  // Define a global for module definition FIXME: avoid name crash.
+  define = _interface.define
+
+  // If running in Node in Sync mode export the interface.
   if (!fletcher.async) {
-    define = _interface.define
-    module.exports.define = _interface.define
-    module.exports.fletcher = _interface
+    module.exports = _interface
   } else {
-    define = _interface.define
-    require = _interface.require
+    // If running in the browser define globals `require` and `fletcher`.
+    this["fletcher"] = _interface
+    this["require"] = _interface.require
   }
-
-  return _interface
 
 }).call(this)
