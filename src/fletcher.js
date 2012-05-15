@@ -15,7 +15,7 @@
     // Running in server with NodeJs the behavior will be Sync.
     async: !(typeof module !== 'undefined' && module.exports),
 
-    mainContext: {},
+    mainContext: null,
 
     // Dependency tree object
     tree: {},
@@ -384,6 +384,9 @@
       return !fail
     }
   }
+
+  // FIXME: Make fletcher store modules in root namespace for now.
+  fletcher.mainContext = this
 
   // Define fletcher interface
   var _interface = {

@@ -1,6 +1,8 @@
 scenario = Gerbil.scenario
 Gerbil.console = Gerbil.Console.pretty
 
+//fletcher.logger.logInfo = true
+
 scenario("Fletcher", {
 
   "should define define global": function (g) {
@@ -26,4 +28,11 @@ scenario("Async", {
     define("module_a", function(m) { m.jump = function() {} })
     define("module_b", function(m) { m.walk = function() {} })
   },
+
+  "should wait for Underscore to be loaded": function (g) {
+
+    define("myLib", "_", function (myLib, underscore) {
+      g.assertEqual(underscore.isObject(myLib), true)
+    })
+  }
 })

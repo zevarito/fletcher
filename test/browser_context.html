@@ -6,16 +6,15 @@
     <!--- load Fletcher -->
     <script type="text/javascript" src="../src/fletcher.js"></script>
 
-    <script type="text/javascript">
-      if (typeof Gerbil !== "undefined")
-        console.log("Gerbil included through <script> tag")
+    <!--- execute Fletcher Tests -->
+    <script type="text/javascript" src="./browser_test.js"></script>
 
-      if (typeof fletcher !== "undefined")
-        console.log("Fletcher included through <script> tag")
+    <!--- load Underscore -->
+    <script type="text/javascript" src="./vendor/underscore.js"></script>
+
+    <script type="text/javascript">
 
     </script>
 
-    <!--- load Fletcher Tests -->
-    <script type="text/javascript" src="./browser_test.js"></script>
   </head>
 </html>
