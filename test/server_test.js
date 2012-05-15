@@ -1,4 +1,4 @@
-gerbil = require('gerbil')
+gerbil = require('./vendor/gerbil/lib/gerbil')
 
 fletcher = require('../src/fletcher')
 
@@ -32,8 +32,8 @@ scenario("Define", {
 
     define("module_c", "module_a", "module_b",
       function(c, a, b) {
-        g.assertFunction(a.jump)
-        g.assertFunction(b.walk)
+        g.assertType(Function, a.jump)
+        g.assertType(Function, b.walk)
       }
     )
   },

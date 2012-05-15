@@ -1,4 +1,5 @@
 scenario = Gerbil.scenario
+Gerbil.console = Gerbil.Console.pretty
 
 scenario("Fletcher", {
 

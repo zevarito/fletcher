@@ -94,7 +94,8 @@ define(name, [dep1..depX], function or Object)
 - Test dependencies
   - [Node](http://nodejs.org)
   - [PhantomJs](http://phantomjs.org)
-  - [Gerbil](http://github.com/elcuervo/gerbil) as Node package
+  - [Gerbil](http://github.com/elcuervo/gerbil)
+    Loaded as git submodule.
 
 - Build dependencies
   - [Closure Compiler](http://closure-compiler.googlecode.com/)
@@ -114,9 +115,9 @@ $ npm test
 ```
 
 Tests are writted using Gerbil test framework and are separated in two groups.
-Browser side tests will test the Async behavior of Fletcher and Server side test
+Browser side tests will test the Async behavior of Fletcher, and Server side test
 will test Fletcher Sync behavior running with Node.
-PhantomJs is a dependency to run Browsers tests in a headless way, but not code is assertions is evaluated there
+PhantomJs is a dependency to run Browsers tests in a headless way, but not assertion code is evaluated there
 for now.
 
 Run Node tests only.
