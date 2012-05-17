@@ -1,5 +1,9 @@
+console.log("Starting browser tests...")
+
 scenario = Gerbil.scenario
-//Gerbil.console = Gerbil.Console.pretty
+
+if (typeof __PHANTOMJS__ !== "undefined")
+  Gerbil.console = Gerbil.Console.pretty
 
 //fletcher.logger.logInfo = true
 

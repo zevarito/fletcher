@@ -1,3 +1,5 @@
+console.log("Starting server tests...")
+
 gerbil = require('./vendor/gerbil/lib/gerbil')
 
 fletcher = require('../src/fletcher')

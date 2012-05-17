@@ -26,6 +26,10 @@ page.onError = function (msg, trace) {
   })
 }
 
-page.open("./test/browser_context.html", function (status) {
-  log("Open Status: " + status + "\n")
-})
+page.onInitialized = function () {
+  page.evaluate(function () {
+    __PHANTOMJS__ = {}
+  })
+}
+
+page.open("./test/browser_context.html", function (status) {})
