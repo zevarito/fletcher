@@ -18,7 +18,7 @@ scenario("Async", {
 
   "should define modules with dependencies that doesn't exist yet": function (g) {
 
-    define("module_c", "module_a", "module_b",
+    define("module_c", ["module_a", "module_b"],
       function(c, a, b) {
         g.assertType(Function, a.jump)
         g.assertType(Function, b.walk)
@@ -34,14 +34,14 @@ scenario("Async", {
 
   "should wait for Underscore to be loaded": function (g) {
 
-    define("myLib", "_", function (myLib, underscore) {
+    define("myLib", ["_"], function (myLib, underscore) {
       g.assertEqual(underscore.isObject(myLib), true)
     })
   },
 
   "should wait for a whole dependency chain": function (g) {
 
-    define("namespace/myLib", "$", "_", "Backbone", function (myLib, jQ, underscore, backbone) {
+    define("namespace/myLib", ["$", "_", "Backbone"], function (myLib, jQ, underscore, backbone) {
       var view = new backbone.View()
       g.assertEqual(view.tagName, "div")
     })

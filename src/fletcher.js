@@ -1,5 +1,17 @@
 (function () {
 
+  var isFunction = function (fn) {
+    return (typeof fn === "function")
+  }
+
+  var isArray = function (arr) {
+    return Object.prototype.toString.apply(arr) === '[object Array]'
+  }
+
+  var isObject = function (obj) {
+    return (typeof obj === "object" && !isArray(obj))
+  }
+
   var logger = {
     logInfo: false,
 
@@ -70,8 +82,13 @@
       var args = Array.prototype.slice.call(arguments)
 
       var key = args[0],
-          dependencies = args.slice(1, -1),
-          body = args.slice(-1)[0]
+          dependencies = args[1] || [],
+          body = args[2]
+
+      if (isFunction(dependencies) || isObject(dependencies)) {
+        body = dependencies
+        dependencies = []
+      }
 
       originalDependencies = dependencies.slice(0)
       dependencies = this.rejectSolvedDependencies(dependencies)
