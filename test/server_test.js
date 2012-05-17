@@ -32,14 +32,31 @@ scenario("Define", {
     )
   },
 
-  "should not accept anonymous modules": function (g) {
-    g.pending("Are we going to do this after all?")
-  },
-
   "should be able to define object literals": function (g) {
     define("apple", { color: "red" })
     var apple = fletcher.require('apple')
     g.assertEqual(apple.color, "red")
+  },
+
+  "should define anonymous literal modules": function (g) {
+    define({})
+    g.assert(true)
+  },
+
+  "should define anonymous function modules": function (g) {
+    define(function () {
+      g.assertType(Object, this)
+    })
+  },
+
+  "should define anonymous modules with dependencies": function (g) {
+    define("a", function () { return {a: "a"} })
+    define("b", function () { return {b: "b"} })
+
+    define(["a", "b"], function (m, a, b) {
+      g.assertEqual(a, {a: "a"})
+      g.assertEqual(b, {b: "b"})
+    })
   }
 })
 

@@ -1,0 +1,7 @@
+# May 2012
+
+* Allow define requirements using an Array.
+* Ability to run in Async and Sync modes depending on browser or server.
+* Test suite added.
+
+Yeah, it was a debt :)

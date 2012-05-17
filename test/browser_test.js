@@ -20,6 +20,37 @@ scenario("Fletcher", {
 
 scenario("Async", {
 
+  "should support anonymous function module definitions": function (g) {
+
+    g.async(function () {
+
+      define(function () {
+        g.assert(this)
+        g.end()
+      })
+    })
+  },
+
+  "should support anonymous literal module definitions": function (g) {
+    define({})
+    g.assert(true)
+  },
+
+
+  "should support anonymous module definitions with dependencies": function (g) {
+
+    define(["a", "b"], function (m, a, b) {
+      g.assertEqual(a, {a: "a"})
+      g.assertEqual(b, {b: "b"})
+      g.end()
+    })
+
+    g.async(function () {
+      define("a", function () { return {a: "a"} })
+      define("b", function () { return {b: "b"} })
+    })
+  },
+
   "should define modules with dependencies that doesn't exist yet": function (g) {
 
     define("module_c", ["module_a", "module_b"],

@@ -12,6 +12,14 @@
     return (typeof obj === "object" && !isArray(obj))
   }
 
+  var isFunctionOrObject = function(obj) {
+    return isObject(obj) || isFunction(obj)
+  }
+
+  var isString = function (str) {
+    return (typeof str === "string")
+  }
+
   var logger = {
     logInfo: false,
 
@@ -44,6 +52,9 @@
     // {"module.namespace": true}
     dependencies_solved: {},
 
+    // Keep a count of anonymous defined modules.
+    anonymousModulesCount: 0,
+
     // Set a function to be called when all dependencies are loaded.
     //
     // fn      - Function to be called
@@ -68,9 +79,19 @@
 
     // Defines a Module
     //
-    // String  - Module name
-    // *String - Module dependency name
-    // Fn      - Function that "closures" your module
+    // Examples:
+    //
+    //  define({})
+    //
+    //  define(function () {})
+    //
+    //  define(["dep1", "dep2"], function (module, dep1, dep2) {})
+    //
+    //  define("name", {})
+    //
+    //  define("name", function () {})
+    //
+    //  define("name", ["dep1", "dep2"], function (module, dep1, dep2) {})
     //
     // Returns Nothing.
     //
@@ -85,9 +106,25 @@
           dependencies = args[1] || [],
           body = args[2]
 
-      if (isFunction(dependencies) || isObject(dependencies)) {
+      // It is an anonymous module with no dependencies?
+      if (!isString(key) && isFunctionOrObject(key)) {
+        body = key
+        key = "anonymous" + this.anonymousModulesCount++
+
+      // It is an anonymous with dependencies?
+      } else if(!isString(key) && isArray(key)) {
         body = dependencies
-        dependencies = []
+        dependencies = key
+        key = "anonymous" + this.anonymousModulesCount++
+
+      // It is a named module?
+      } else if (isString(key)) {
+
+        // It hasn't dependencies?
+        if (!isArray(dependencies)) {
+          body = dependencies
+          dependencies = []
+        }
       }
 
       originalDependencies = dependencies.slice(0)
