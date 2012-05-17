@@ -1,5 +1,5 @@
 scenario = Gerbil.scenario
-Gerbil.console = Gerbil.Console.pretty
+//Gerbil.console = Gerbil.Console.pretty
 
 //fletcher.logger.logInfo = true
 
@@ -22,11 +22,14 @@ scenario("Async", {
       function(c, a, b) {
         g.assertType(Function, a.jump)
         g.assertType(Function, b.walk)
+        g.end()
       }
     )
 
-    define("module_a", function(m) { m.jump = function() {} })
-    define("module_b", function(m) { m.walk = function() {} })
+    g.async(function () {
+      define("module_a", function(m) { m.jump = function() {} })
+      define("module_b", function(m) { m.walk = function() {} })
+    })
   },
 
   "should wait for Underscore to be loaded": function (g) {
