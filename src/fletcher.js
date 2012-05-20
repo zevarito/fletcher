@@ -452,6 +452,9 @@
   // Define a global for module definition FIXME: avoid name crash.
   define = _interface.define
 
+  // Declare AMD loader
+  define["amd"] = {}
+
   // If running in Node in Sync mode export the interface.
   if (!fletcher.async) {
     module.exports = _interface

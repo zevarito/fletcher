@@ -15,6 +15,10 @@ scenario("Fletcher", {
 
   "should define fletcher global": function (g) {
     g.assert(fletcher)
+  },
+
+  "should declare itself as an AMD module": function (g) {
+    g.assertType(Object, define.amd)
   }
 })
 
