@@ -22,6 +22,29 @@ scenario("Fletcher", {
   }
 })
 
+scenario("Security concerns", {
+  "should not define modules in the root namespace": function (g) {
+    g.assert(typeof a === "undefined")
+
+    define("a", {})
+
+    g.async(function () {
+      define(["a"], function() {
+        g.assert(typeof window.a === "undefined")
+        g.end()
+      })
+    })
+  }
+})
+
+scenario("Define modules", {
+  "should load synchronously modules with no dependencies": function (g) {
+    define("a", {value: 1})
+
+    g.assertEqual(1, require("a").value)
+  }
+})
+
 scenario("Define Anonymous modules", {
 
   "should support anonymous function module definitions": function (g) {
@@ -89,16 +112,22 @@ scenario("Define named modules", {
 
   "should wait for Underscore to be loaded": function (g) {
 
-    define("myLib", ["_"], function (myLib, underscore) {
-      g.assertEqual(underscore.isObject(myLib), true)
+    g.async(function () {
+      define("myLib", ["_"], function (myLib, underscore) {
+        g.assertEqual(underscore.isObject(myLib), true)
+        g.end()
+      })
     })
   },
 
   "should wait for a whole dependency chain": function (g) {
 
-    define("namespace/myLib", ["$", "_", "Backbone"], function (myLib, jQ, underscore, backbone) {
-      var view = new backbone.View()
-      g.assertEqual(view.tagName, "div")
+    g.async(function () {
+      define("namespace/myLib", ["$", "_", "Backbone"], function (myLib, jQ, underscore, backbone) {
+        var view = new backbone.View()
+        g.assertEqual(view.tagName, "div")
+        g.end()
+      })
     })
   }
 })

@@ -140,8 +140,11 @@
         loaded: false
       }
 
-      // FIXME: If module has no dependencies it can be loaded synchronously.
-      this.defer(this.startWorker)
+      // If module has no dependencies it can be loaded synchronously.
+      if (dependencies.length === 0)
+        this.loadModule(this.tree[key])
+      else
+        this.defer(this.startWorker)
     },
 
     require: function (module_key) {
@@ -149,7 +152,7 @@
       if (isArray(module_key)) {
         this.define.apply(this, arguments)
       } else {
-        return this.keyToNamespace(module_key, this.mainContext)
+        return this.keyToNamespace(module_key)
       }
     },
 
@@ -253,7 +256,7 @@
       var dependencies_namespaces = new Array()
 
       for(var i in dependencies) {
-        dependencies_namespaces.push(this.keyToNamespace(dependencies[i], this.mainContext))
+        dependencies_namespaces.push(this.keyToNamespace(dependencies[i]))
       }
 
       return dependencies_namespaces
@@ -358,6 +361,23 @@
       this.dependencies_solved[dependency] = true
     },
 
+    // Convinient function to find a `key` in root and main namespaces.
+    //
+    // key - String representing the namespace.
+    //
+    // Returns found namespace or undefined.
+    //
+    keyToNamespace: function (key) {
+      var ns
+
+      if (ns = this.keyToNamespaceByContext(key, this.rootContext))
+        return ns
+      else if (ns = this.keyToNamespaceByContext(key, this.mainContext))
+        return ns
+      else
+        return undefined
+    },
+
     // Parses a String representing a namespace and return
     // the namespace found in the given context.
     //
@@ -366,7 +386,7 @@
     //
     // Returns found namespace or undefined.
     //
-    keyToNamespace: function(key, context) {
+    keyToNamespaceByContext: function(key, context) {
 
       // Is `require` *special* variable required as dependency?
       // We will not search for `require` as a namespace, we will return
@@ -433,7 +453,7 @@
             this.loadModule(this.tree[module_key])
           else
             fail = true
-        } else if(this.keyToNamespace(module_key, this.mainContext) !== undefined) {
+        } else if(this.keyToNamespace(module_key) !== undefined) {
           logger.info("Found: " + module_key)
           this.removeDependency(module_key)
         } else {
@@ -452,8 +472,8 @@
     }
   }
 
-  // FIXME: Make fletcher store modules in root namespace for now.
-  fletcher.mainContext = this
+  fletcher.rootContext = this
+  fletcher.mainContext = {}
 
   // Define fletcher interface
   var _interface = {
