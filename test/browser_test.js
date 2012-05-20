@@ -22,7 +22,7 @@ scenario("Fletcher", {
   }
 })
 
-scenario("Async", {
+scenario("Define Anonymous modules", {
 
   "should support anonymous function module definitions": function (g) {
 
@@ -55,6 +55,22 @@ scenario("Async", {
     })
   },
 
+  "should support anonymous module definition using require": function (g) {
+
+    require(["a", "b"], function (a,b) {
+      g.assertType(Object, a)
+      g.assertType(Object, b)
+      g.end()
+    })
+
+    g.async(function () {
+      define("a", {})
+      define("b", {})
+    })
+  }
+})
+
+scenario("Define named modules", {
   "should define modules with dependencies that doesn't exist yet": function (g) {
 
     define("module_c", ["module_a", "module_b"],

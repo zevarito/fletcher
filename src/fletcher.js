@@ -140,11 +140,17 @@
         loaded: false
       }
 
+      // FIXME: If module has no dependencies it can be loaded synchronously.
       this.defer(this.startWorker)
     },
 
     require: function (module_key) {
-      return this.keyToNamespace(module_key, this.mainContext)
+      // Is `require` used in the form of `define` anonymous modules?
+      if (isArray(module_key)) {
+        this.define.apply(this, arguments)
+      } else {
+        return this.keyToNamespace(module_key, this.mainContext)
+      }
     },
 
     // Defers a function execution. Only if `async` flag value
@@ -361,6 +367,13 @@
     // Returns found namespace or undefined.
     //
     keyToNamespace: function(key, context) {
+
+      // Is `require` *special* variable required as dependency?
+      // We will not search for `require` as a namespace, we will return
+      // our require function directly. This is done like this because require
+      // *may not* be exported as global in certain environments.
+      if (key === "require")
+        return this.require
 
       var parts = key.split(".")
 
