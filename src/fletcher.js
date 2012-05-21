@@ -150,6 +150,11 @@
         this.defer(this.startWorker)
     },
 
+    // Load a module based on his key string.
+    //
+    // module_key - String representing the module to be loaded.
+    //
+    // Returns module if was found and not used in the define form.
     require: function (module_key) {
       // Is `require` used in the form of `define` anonymous modules?
       if (isArray(module_key)) {
@@ -489,6 +494,7 @@
   var _interface = {
     define: function() { return fletcher.define.apply(fletcher, arguments) },
     require: function() { return fletcher.require.apply(fletcher, arguments) },
+    onComplete: function() { return fletcher.onComplete.apply(fletcher, arguments) },
     logger: logger
   }
 

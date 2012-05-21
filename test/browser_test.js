@@ -47,6 +47,18 @@ scenario("Define modules", {
 
 scenario("Define Anonymous modules", {
 
+  "should be able to setup a callback to know when all modules have been loaded": function (g) {
+    g.async(function () {
+      define("a", {})
+      define("my_module", ["a"], function (a) { return {a: "Hey!"} })
+    })
+
+    fletcher.onComplete(function () {
+      g.assertEqual(require("my_module").a, "Hey!")
+      g.end()
+    })
+  },
+
   "should support anonymous function module definitions": function (g) {
 
     g.async(function () {

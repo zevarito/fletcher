@@ -6,6 +6,8 @@ that doesn't conform the specs of module definition.
 This library intent to be AMDjs compliant and implements most of its fatures but currently it **is not** 100% compliant.
 Read more about [AMDjs](http://github.com/amdjs).
 
+It is still a work in progress.
+
 ## Features
 
 - It is lightweight, ~500 lines of commented code and ~3.8Kb compressed with Google closure compiler.
@@ -129,6 +131,16 @@ require(String or Array, [function or Object])
 ```
 
 TODO: Improve require API documentation ;)
+
+### onComplete
+
+A callback function used when running Async to let the user know when all defined modules has been loaded.
+
+```js
+fletcher.onComplete = function () {
+  // We are set.
+}
+```
 
 ## Development
 
