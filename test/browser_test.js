@@ -29,7 +29,7 @@ scenario("Security concerns", {
     define("a", {})
 
     g.async(function () {
-      define(["a"], function() {
+      define(["a"], function (a) {
         g.assert(typeof window.a === "undefined")
         g.end()
       })
@@ -66,7 +66,7 @@ scenario("Define Anonymous modules", {
 
   "should support anonymous module definitions with dependencies": function (g) {
 
-    define(["a", "b"], function (m, a, b) {
+    define(["a", "b"], function (a, b) {
       g.assertEqual(a, {a: "a"})
       g.assertEqual(b, {b: "b"})
       g.end()
@@ -97,7 +97,7 @@ scenario("Define named modules", {
   "should define modules with dependencies that doesn't exist yet": function (g) {
 
     define("module_c", ["module_a", "module_b"],
-      function(c, a, b) {
+      function(a, b) {
         g.assertType(Function, a.jump)
         g.assertType(Function, b.walk)
         g.end()
@@ -105,16 +105,16 @@ scenario("Define named modules", {
     )
 
     g.async(function () {
-      define("module_a", function(m) { m.jump = function() {} })
-      define("module_b", function(m) { m.walk = function() {} })
+      define("module_a", { jump: function() {} })
+      define("module_b", { walk: function() {} })
     })
   },
 
   "should wait for Underscore to be loaded": function (g) {
 
     g.async(function () {
-      define("myLib", ["_"], function (myLib, underscore) {
-        g.assertEqual(underscore.isObject(myLib), true)
+      define("myLib", ["_"], function (underscore) {
+        g.assertEqual(underscore.isObject(this), true)
         g.end()
       })
     })
@@ -123,7 +123,7 @@ scenario("Define named modules", {
   "should wait for a whole dependency chain": function (g) {
 
     g.async(function () {
-      define("namespace/myLib", ["$", "_", "Backbone"], function (myLib, jQ, underscore, backbone) {
+      define("namespace/myLib", ["$", "_", "Backbone"], function (jQ, underscore, backbone) {
         var view = new backbone.View()
         g.assertEqual(view.tagName, "div")
         g.end()

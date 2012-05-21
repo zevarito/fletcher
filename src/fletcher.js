@@ -77,7 +77,7 @@
       this.completed = true
     },
 
-    // Defines a Module
+    // Defines a Module.
     //
     // Examples:
     //
@@ -85,13 +85,13 @@
     //
     //  define(function () {})
     //
-    //  define(["dep1", "dep2"], function (module, dep1, dep2) {})
+    //  define(["dep1", "dep2"], function (dep1, dep2) {})
     //
     //  define("name", {})
     //
     //  define("name", function () {})
     //
-    //  define("name", ["dep1", "dep2"], function (module, dep1, dep2) {})
+    //  define("name", ["dep1", "dep2"], function (dep1, dep2) {})
     //
     // Returns Nothing.
     //
@@ -271,17 +271,11 @@
 
         module.namespace = module.namespace || {}
 
-        var args = [module.namespace],
-            requirements = this.getDepenciesNamespaces(module.originalDependencies)
-
-        // Add required modules to arguments call
-        for (var i in requirements) {
-          args.push(requirements[i])
-        }
+        var requirements = this.getDepenciesNamespaces(module.originalDependencies)
 
         // Provide `Empty` context to execute module in a "safe" place.
         // Also keep trace of what the module returns.
-        var ret = module.body.apply({}, args)
+        var ret = module.body.apply({}, requirements)
 
         // If the module returns `something` replace namespace with it.
         if (ret !== undefined) module.namespace = ret

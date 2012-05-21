@@ -21,11 +21,11 @@ scenario("Define", {
 
   "should pass dependencies as arguments": function (g) {
 
-    define("module_a", function(m) { m.jump = function() {} })
-    define("module_b", function(m) { m.walk = function() {} })
+    define("module_a", { jump: function() {} })
+    define("module_b", { walk: function() {} })
 
     define("module_c", ["module_a", "module_b"],
-      function(c, a, b) {
+      function(a, b) {
         g.assertType(Function, a.jump)
         g.assertType(Function, b.walk)
       }
@@ -53,7 +53,7 @@ scenario("Define", {
     define("a", function () { return {a: "a"} })
     define("b", function () { return {b: "b"} })
 
-    define(["a", "b"], function (m, a, b) {
+    define(["a", "b"], function (a, b) {
       g.assertEqual(a, {a: "a"})
       g.assertEqual(b, {b: "b"})
     })
@@ -66,9 +66,12 @@ scenario("Require", {
 
     var m
 
-    define("my_module", function(my_module) {
-      my_module.doesGreatThing = function() {}
-      m = my_module
+    define("my_module", function () {
+      m = {
+        doesGreatThing: function () {}
+      }
+
+      return m
     })
 
     var my_module = fletcher.require('my_module')
