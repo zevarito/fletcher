@@ -1,5 +1,6 @@
 # May 2012
 
+* Add support for both . and / namespaces.
 * Don't pass module defined as first argument in module function definition.
 * Define modules in a safe namespace.
 * Search for external module namespaces in root first then our namespace.

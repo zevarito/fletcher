@@ -1,91 +1,134 @@
-# **Fletcher** is a lightweight unobtrusive Javascript module loader.
+# **Fletcher** is a lightweight Javascript module loader
 
-It features Async behavior on browser side and Sync behavior when used on the server. It aims to have the only
-requirement of being included before be used. This library is under heavy development and some API
-changes such as names of current `define` and `require` functions will change to avoid any kind of conflict with other
-module loaders such as [RequireJs](http://requirejs.org), so please if you use this in production enviroment know the risks.
+It features Async behavior on browser side and Sync behavior when used on the server.
+It aims to have the only requirement of being included before being used, even if you are importing Javascript libraries
+that doesn't conform the specs of module definition.
+This library intent to be AMDjs compliant and implements most of its fatures but currently it **is not** 100% compliant.
+Read more about [AMDjs](http://github.com/amdjs).
 
-- [Examples] (#examples)
-  - [Defining Modules] (#defining-modules)
-     - [Object Literals] (#object-literals)
-     - [Function Wrapped] (#function-wrapped)
-     - [With Dependencies] (#with-dependencies)
+## Features
+
+- It is lightweight, ~500 lines of commented code and ~3.8Kb compressed with Google closure compiler.
+- Run in Browser and Server environemnts.
+- Define anonymous and named modules with and without dependencies.
+- Transparent requirement of JS libraries defined without following AMDjs module spec.
+- Fetch resources from HTTP (On the way)
+
+## Table of Contents
+
+- [Defining Modules] (#defining-modules)
+  - [Anonymous Modules] (#anonymous-modules)
+  - [Named Modules] (#named-modules)
+  - [Requiring External Javascript Libraries] (#requiring-external-js-libraries)
 - [Api] (#api)
 - [Development] (#development)
 - [Contributions] (#contributions)
 - [License] (#license)
 - [Authorship] (#authorship)
-
-
-## Examples
+- [History] (#history)
 
 ## Defining Modules
 
-### Object Literals
+### Anonymous Modules
 
-Object literals are the most basic form of modules.
-You just need to pass a Javascript object as second argument and thas it,
+Anonymous Object literals are the most basic form of modules.
+You just need to pass a Javascript object as module definition argument and that's it,
 the whole object will become `public` and full available to be used.
+This form **should** not have any dependencies.
 
 ```js
-define("capuchino", {
-  foam: "much",
-  temperature: function () { /*...*/ }
-});
-
-require("capuchino") // {foam: "much", temperature: [Function]}
-```
-
-### Function Wrapped
-
-There is two ways to return an `interface`, this will become the `public` access to the module.
-
-a) Implement the first argument passed will become your module `interface` definition.
-
-```js
-define("capuchino", function (capuchino) {
-  // implement capuchino, it will be the module exported.
-};
-```
-b) Return an `object` will become your module `interface` definition.
-
-```js
-define("capuchino", function () {
-  // implement capuchino
-
-  return {
-    // export capuchino interface
-  }
+define({
+  // Fill the object.
 });
 ```
 
-### With Dependencies
+Anonymous module with dependencies.
 
 ```js
-define("ingredients", function (ingredients) {
-  ingredients.milk = function () {};
-  ingredients.coffe = function () {};
-});
-
-define("capuchino", "ingredients", function (capuchino, ingredients) {
-  capuchino.makeCoffe = function () {
-    return ingredients.coffe() + ingredients.milk();
-  }
+define(["a", "b"], function (a,b) {
+  // Implement your module using `a` and `b`
 });
 ```
+
+Anonymous modules doesn't need to expose an interface since there is no way to require it later.
+
+### Named Modules
+
+Object literals.
+
+```js
+define("my_module", {
+  doSomething: function () { /* ... */ }
+});
+```
+
+then...
+
+```js
+require("my_module").doSomething();
+```
+
+Defining named modules with dependencies.
+
+```js
+define("my_module", ["a", "b"], function (a,b) {
+  // Implement your module using `a` and `b`
+  
+  // Export an interface
+  return { /* ... */ }
+  
+  // Export a function instead
+  return function () { /* ... */ }
+});
+```
+
+then
+
+```js
+require("my_module")
+```
+
+## Requiring External Javascript Libraries
+
+If you want to load libraries such as [UnderscoreJS] (http://github.com/documentcloud/underscore) or
+[Backbone] (http://github.com/documentcloud/backbone) which doesn't support AMD spec by default you can load them
+transparenly by requiring them as a regular module.
+
+```js
+define("my_module", ["_", "Backbone"], function (underscore, backbone) {
+  // Use underscore and backbone references in your module
+});
+```
+
+If you want to require an specific portion of Backbone instead you can do the following.
+
+```js
+define("my_module", ["_", "Backbone.View"], function (underscore, backbone_view) {
+  // backbone_view will be Backbone.View namespace
+});
+```
+
 ## API
 
 ### define
 
 ```js
-define(name, [dep1..depX], function or Object)
+define([name], [[dep0..depN]], function or Object)
 ```
 
-`name` is a required.
+`name` Optional String naming the module.
 
-`[dep1..depX]` A comma separated list of dependencies as strings.
+`[dep1..depX]` An Array of dependencies as strings. Global namespaces such as "_" can be required here.
 
 `function or Object` Module definition.
+
+### require
+
+```js
+require(String or Array, [function or Object])
+```
+
+TODO: Improve require API documentation ;)
 
 ## Development
 
@@ -117,8 +160,7 @@ $ npm test
 Tests are writted using Gerbil test framework and are separated in two groups.
 Browser side tests will test the Async behavior of Fletcher, and Server side test
 will test Fletcher Sync behavior running with Node.
-PhantomJs is a dependency to run Browsers tests in a headless way, but not assertion code is evaluated there
-for now.
+PhantomJs is a dependency to run Browsers tests in a headless way.
 
 Run Node tests only.
 
@@ -152,4 +194,3 @@ Please refer to LICENSE file for more details.
 [Alvaro Gil](http://github.com/zevarito)
 
 [Cubox](http://cuboxlabs.com)
-
