@@ -1,5 +1,11 @@
 # May 2012
 
+* Don't pass module defined as first argument in module function definition.
+* Define modules in a safe namespace.
+* Search for external module namespaces in root first then our namespace.
+* Identify as AMD loader.
+* Allow to use require as define for anonymous modules.
+* Even in the browser load modules with no deps synchronously.
 * Allow define requirements using an Array.
 * Ability to run in Async and Sync modes depending on browser or server.
 * Test suite added.
