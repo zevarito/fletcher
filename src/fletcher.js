@@ -226,8 +226,6 @@
         // Else load the module.
         if (module.dependencies && module.dependencies.length > 0) {
 
-          // TODO: Defer this function to prioritize moudules with no dep.
-          //
           // Attempt to satisfy those dependencies.
           // If everything ok the module will be loaded.
           if (this.satisfy(module))
@@ -461,7 +459,6 @@
             logger.info("Missing: " + module_key)
             fail = true
           } else {
-            // TODO: Pretty sure this blow up with two modules, let's see...
             logger.info("I'll find you: " + module_key)
             this.traverse()
           }
@@ -472,21 +469,23 @@
     }
   }
 
+  // Keep a reference to the root context.
   fletcher.rootContext = this
+  // Create a base namespace where modules will be loaded.
   fletcher.mainContext = {}
 
-  // Define fletcher interface
+  // Define fletcher interface.
   var _interface = {
     define: function() { return fletcher.define.apply(fletcher, arguments) },
     require: function() { return fletcher.require.apply(fletcher, arguments) },
     logger: logger
   }
 
-  // Define a global for module definition FIXME: avoid name crash.
-  define = _interface.define
+  // Declare itself as an AMD loader.
+  _interface.define["amd"] = {}
 
-  // Declare AMD loader
-  define["amd"] = {}
+  // Define a global for module definition.
+  define = _interface.define
 
   // If running in Node in Sync mode export the interface.
   if (!fletcher.async) {
