@@ -1,5 +1,6 @@
 (function () {
 
+  // Convenient functions
   var isFunction = function (fn) {
     return (typeof fn === "function")
   }
@@ -20,6 +21,7 @@
     return (typeof str === "string")
   }
 
+  // Logger support
   var logger = {
     logInfo: false,
 
@@ -28,6 +30,7 @@
     }
   }
 
+  // Implementation
   var fletcher = {
 
     // Indicates if we will be using Fletcher in Async or Sync way.
@@ -442,21 +445,30 @@
       var req = module.dependencies.length == 0 ? "none" : module.dependencies
       logger.info("Satisfying: \"" + module.key + "\" dependencies: " + req)
 
+      // Iterate over module dependencies
       module.dependencies.forEach(function(module_key) {
 
-        // Do we have a module defined and it is not loaded?
+        // Do we have a module defined?
         if(this.tree[module_key] !== undefined) {
+
+          // Is that module ready to be loaded?
           if(this.tree[module_key].dependencies.length == 0 && !this.tree[module_key].loaded)
             this.loadModule(this.tree[module_key])
           else
             fail = true
+
+        // There is a namespace defined?
         } else if(this.keyToNamespace(module_key) !== undefined) {
           logger.info("Found: " + module_key)
           this.removeDependency(module_key)
+
         } else {
+          // If we are running Async declare the namespace dependency as missing.
           if (this.async) {
             logger.info("Missing: " + module_key)
             fail = true
+
+          // If we are running Sync attempt to load the module before doing anything else.
           } else {
             logger.info("I'll find you: " + module_key)
             this.traverse()
