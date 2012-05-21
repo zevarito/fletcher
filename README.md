@@ -14,7 +14,13 @@ It is still a work in progress.
 - Run in Browser and Server environemnts.
 - Define anonymous and named modules with and without dependencies.
 - Transparent requirement of JS libraries defined without following AMDjs module spec.
+
+## Roadmap
+
 - Fetch resources from HTTP (On the way)
+- [AMDjs Tests] (https://github.com/amdjs/amdjs-tests) (On the way)
+- Benchmarks
+
 
 ## Table of Contents
 
