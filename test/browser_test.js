@@ -129,5 +129,28 @@ scenario("Define named modules", {
         g.end()
       })
     })
+  },
+
+  "should accept multiple namespaces": function (g) {
+    define("my_root/my_module", function () {
+      return {
+        something: function () { return "Hello!" }
+      }
+    })
+
+    var m = require("my_root/my_module")
+
+    g.assertEqual(m.something(), "Hello!")
+  },
+
+  "should require specific namespace of an external lib": function (g) {
+
+    g.async( function () {
+      define("my_root/my_module", ["Backbone.View"], function (backbone_view) {
+        var view = new backbone_view
+        g.assertEqual(view.tagName, "div")
+        g.end()
+      })
+    })
   }
 })

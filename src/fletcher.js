@@ -387,7 +387,12 @@
       if (key === "require")
         return this.require
 
-      var parts = key.split(".")
+      // Support . and / notation
+      var parts;
+      if (key.match("."))
+        parts = key.split(".")
+      else if (key.match("/"))
+        parts = key.split("/")
 
       try {
         parts.forEach(function(part, i) {
