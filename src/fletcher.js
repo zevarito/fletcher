@@ -53,7 +53,7 @@
 
     // This is an object from this composition:
     // {"module.namespace": true}
-    dependencies_solved: {},
+    dependenciesSolved: {},
 
     // Keep a count of anonymous defined modules.
     anonymousModulesCount: 0,
@@ -152,15 +152,15 @@
 
     // Load a module based on his key string.
     //
-    // module_key - String representing the module to be loaded.
+    // moduleKey - String representing the module to be loaded.
     //
     // Returns module if was found and not used in the define form.
-    require: function (module_key) {
+    require: function (moduleKey) {
       // Is `require` used in the form of `define` anonymous modules?
-      if (isArray(module_key)) {
+      if (isArray(moduleKey)) {
         this.define.apply(this, arguments)
       } else {
-        return this.keyToNamespace(module_key)
+        return this.keyToNamespace(moduleKey)
       }
     },
 
@@ -182,11 +182,11 @@
       if(this.traversing || this.completed)
         return
 
-      this.traversing = true;
+      this.traversing = true
 
       var worker = function () {
         this.traverse()
-        this.traversing = false;
+        this.traversing = false
         this.defer(this.startWorker, this.nextTurn())
       }
 
@@ -259,13 +259,13 @@
     // Returns an array of namespaces.
     //
     getDepenciesNamespaces: function(dependencies) {
-      var dependencies_namespaces = new Array()
+      var dependenciesNamespaces = new Array()
 
       for(var i in dependencies) {
-        dependencies_namespaces.push(this.keyToNamespace(dependencies[i]))
+        dependenciesNamespaces.push(this.keyToNamespace(dependencies[i]))
       }
 
-      return dependencies_namespaces
+      return dependenciesNamespaces
     },
 
     // Loads a Module, and remove it from other modules as dependency.
@@ -314,18 +314,18 @@
     // Returns Array with the dependencies still to resolve.
     //
     rejectSolvedDependencies: function (dependencies) {
-      var new_dependencies = []
+      var newDependencies = []
 
       // Iterate over module dependencies.
       for (dep in dependencies) {
 
-        // Iterate over dependencies_solved array to find out if
+        // Iterate over dependenciesSolved array to find out if
         // the dependency was already loaded.
-        if (!this.dependencies_solved[dependencies[dep]])
-          new_dependencies.push(dependencies[dep])
+        if (!this.dependenciesSolved[dependencies[dep]])
+          newDependencies.push(dependencies[dep])
       }
 
-      return new_dependencies
+      return newDependencies
     },
 
     // Remove a dependency from every module dependency in the tree
@@ -342,7 +342,7 @@
 
         // Take module and initialize a new array of dependencies.
         var module = this.tree[key],
-            new_requirements = new Array()
+            newRequirements = new Array()
 
         // Iterate over module dependencies.
         for (var dep in module.dependencies) {
@@ -350,15 +350,15 @@
           // If the dependency isn't the searched dependency add it to the
           // new dependencies array.
           if (module.dependencies[dep] != dependency)
-            new_requirements.push(module.dependencies[dep])
+            newRequirements.push(module.dependencies[dep])
         }
 
         // Write new dependencies in the module.
-        module.dependencies = new_requirements
+        module.dependencies = newRequirements
       }
 
       // Mark this dependency as solved.
-      this.dependencies_solved[dependency] = true
+      this.dependenciesSolved[dependency] = true
     },
 
     // Convinient function to find a `key` in root and main namespaces.
@@ -396,7 +396,7 @@
         return this.require
 
       // Support . and / notation
-      var parts;
+      var parts
       if (key.match("."))
         parts = key.split(".")
       else if (key.match("/"))
@@ -451,31 +451,31 @@
       logger.info("Satisfying: \"" + module.key + "\" dependencies: " + req)
 
       // Iterate over module dependencies
-      module.dependencies.forEach(function(module_key) {
+      module.dependencies.forEach(function(moduleKey) {
 
         // Do we have a module defined?
-        if(this.tree[module_key] !== undefined) {
+        if(this.tree[moduleKey] !== undefined) {
 
           // Is that module ready to be loaded?
-          if(this.tree[module_key].dependencies.length == 0 && !this.tree[module_key].loaded)
-            this.loadModule(this.tree[module_key])
+          if(this.tree[moduleKey].dependencies.length == 0 && !this.tree[moduleKey].loaded)
+            this.loadModule(this.tree[moduleKey])
           else
             fail = true
 
         // There is a namespace defined?
-        } else if(this.keyToNamespace(module_key) !== undefined) {
-          logger.info("Found: " + module_key)
-          this.removeDependency(module_key)
+        } else if(this.keyToNamespace(moduleKey) !== undefined) {
+          logger.info("Found: " + moduleKey)
+          this.removeDependency(moduleKey)
 
         } else {
           // If we are running Async declare the namespace dependency as missing.
           if (this.async) {
-            logger.info("Missing: " + module_key)
+            logger.info("Missing: " + moduleKey)
             fail = true
 
           // If we are running Sync attempt to load the module before doing anything else.
           } else {
-            logger.info("I'll find you: " + module_key)
+            logger.info("I'll find you: " + moduleKey)
             this.traverse()
           }
         }
