@@ -137,6 +137,8 @@ scenario("Define named modules", {
     g.async(function () {
       define("namespace/myLib", ["$", "_", "Backbone"], function (jQ, underscore, backbone) {
         var view = new backbone.View()
+        g.assertEqual(jQ("<p>some</p>").html(), "some")
+        g.assertEqual(underscore.isObject(this), true)
         g.assertEqual(view.tagName, "div")
         g.end()
       })
