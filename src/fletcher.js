@@ -23,7 +23,7 @@
 
   // Logger support
   var logger = {
-    logInfo: false,
+    logInfo: true,
 
     info: function (msg) {
       if (this.logInfo) console.log(msg)
@@ -130,24 +130,49 @@
         }
       }
 
-      originalDependencies = dependencies.slice(0)
+      // Keep a copy of original module dependencies.
+      var originalDependencies = dependencies.slice(0)
+
+      // The module will not depend anymore on resolved dependencies.
       dependencies = this.rejectSolvedDependencies(dependencies)
 
       // Module
-      this.tree[key] = {
-        key: key,
-        namespace: null,
-        originalDependencies: originalDependencies,
-        dependencies: dependencies,
-        body: body,
-        loaded: false
-      }
+      var module = this.tree[key] || {}
+
+      module.key = key
+      module.namespace = null
+      module.originalDependencies = originalDependencies
+      module.dependencies = dependencies
+      module.body = body
+      module.loaded = false
+
+      this.tree[key] = module
+
+      // Create module definitions for dependencies in the module beign defined.
+      this.insertDependenciesOnTree(dependencies)
 
       // If module has no dependencies it can be loaded synchronously.
       if (dependencies.length === 0)
         this.loadModule(this.tree[key])
       else
         this.defer(this.startWorker)
+    },
+
+    insertDependenciesOnTree: function (dependenciesArray) {
+
+      for (var i in dependenciesArray) {
+        // Determine module key and namespace to wait for if it isn't a standard
+        // module definition.
+        var keySplit = dependenciesArray[i].split(":"),
+            moduleKey = keySplit[0],
+            waitForNamespace = keySplit[1],
+            module = this.tree[moduleKey] || {loaded: false, key: moduleKey}
+
+        if (waitForNamespace)
+          module.waitForNamespace = waitForNamespace
+
+        this.tree[moduleKey] = module
+      }
     },
 
     // Load a module based on his key string.
@@ -258,7 +283,7 @@
     //
     // Returns an array of namespaces.
     //
-    getDepenciesNamespaces: function(dependencies) {
+    getDependenciesNamespaces: function(dependencies) {
       var dependenciesNamespaces = new Array()
 
       for(var i in dependencies) {
@@ -274,21 +299,46 @@
     //
     loadModule: function (module) {
 
-      // `Unwrap` the module in a temporary namespace.
+      var ret,
+          loadedAs
+
+      // Is the module defined by a `function` ?
       if (typeof module.body === "function") {
 
+        // `Unwrap` the module in a temporary namespace.
         module.namespace = module.namespace || {}
 
-        var requirements = this.getDepenciesNamespaces(module.originalDependencies)
+        var requirements = this.getDependenciesNamespaces(module.originalDependencies)
 
         // Provide `Empty` context to execute module in a "safe" place.
         // Also keep trace of what the module returns.
-        var ret = module.body.apply({}, requirements)
+        ret = module.body.apply({}, requirements)
 
         // If the module returns `something` replace namespace with it.
         if (ret !== undefined) module.namespace = ret
-      } else {
+
+        loadedAs = "as Function"
+
+      // Is the module defined by an `object`
+      } else if (typeof module.body === "object") {
         module.namespace = module.body
+
+        loadedAs = "as Object"
+
+      // Is it defined in the `local` namespace?
+      } else if (ret = this.keyToNamespaceByContext(module.key, this.mainContext)) {
+        module.namespace = ret
+
+        loadedAs = "from Main namespace"
+
+      // Is it defined in the `global` namespace?
+      } else if (ret = this.keyToNamespaceByContext(module.key, this.rootContext)) {
+        module.namespace = ret
+
+        loadedAs = "from Root namespace"
+
+      } else {
+        return false
       }
 
       // Has the namespace been writed in the given key?
@@ -298,10 +348,12 @@
         module.loaded = true
 
         // Log it.
-        logger.info("Loaded \"" + module.key + "\" as: " + (typeof module.body))
+        logger.info("Loaded \"" + module.key + "\": " + loadedAs)
 
         // Remove as dependency for other modules
         this.removeDependency(module.key)
+
+        return true
       }
     },
 
@@ -453,32 +505,27 @@
       // Iterate over module dependencies
       module.dependencies.forEach(function(moduleKey) {
 
-        // Do we have a module defined?
-        if(this.tree[moduleKey] !== undefined) {
+        // Is that module dependency ready to be loaded? Attempt to load it then.
+        if (this.tree[moduleKey].dependencies.length == 0) {
 
-          // Is that module ready to be loaded?
-          if(this.tree[moduleKey].dependencies.length == 0 && !this.tree[moduleKey].loaded)
-            this.loadModule(this.tree[moduleKey])
-          else
-            fail = true
+          if (this.loadModule(this.tree[moduleKey])) {
+            return // Skip to next iteration.
 
-        // There is a namespace defined?
-        } else if(this.keyToNamespace(moduleKey) !== undefined) {
-          logger.info("Found: " + moduleKey)
-          this.removeDependency(moduleKey)
-
-        } else {
-          // If we are running Async declare the namespace dependency as missing.
-          if (this.async) {
+          // If we couldn't load and we are running Async declare the
+          // dependency as missing.
+          } else if (!this.loadModule(this.tree[moduleKey]) && this.async) {
             logger.info("Missing: " + moduleKey)
-            fail = true
 
-          // If we are running Sync attempt to load the module before doing anything else.
-          } else {
+          // If we couldn't load and we are running Sync on the server
+          // attempt to load the module before continue.
+          } else if (!this.loadModule(this.tree[moduleKey]) && !this.async) {
             logger.info("I'll find you: " + moduleKey)
             this.traverse()
+            return // Skip to next iteration.
           }
         }
+
+        fail = true
       }, this)
 
       return !fail
@@ -495,6 +542,7 @@
     define: function() { return fletcher.define.apply(fletcher, arguments) },
     require: function() { return fletcher.require.apply(fletcher, arguments) },
     onComplete: function() { return fletcher.onComplete.apply(fletcher, arguments) },
+    tree: fletcher.tree,
     logger: logger
   }
 
