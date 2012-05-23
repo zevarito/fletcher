@@ -25,6 +25,7 @@
     var client = new XMLHttpRequest()
     client.onreadystatechange = fn
     client.open("GET", url)
+    client.setRequestHeader("Content-Type", "text/plain;charset=UTF-8")
     client.send()
   }
 
@@ -573,28 +574,42 @@
       return !fail
     },
 
+    // Attempts to fetch a module from network.
+    //
+    // module - Module definition object.
+    //
+    // Returns nothing.
+    //
     fetchFromNetwork: function (module) {
 
-      self = this
+      // Preserve fletcher conext
+      var self = this
 
-      var handler = function () {
-        if (this.readyState === this.DONE) {
+      // Define an XHR handler callback function.
+      var handler = function (event) {
 
-          // TODO: Why this if?
-          if (this.responseText !== "") {
-            window.eval(this.responseText)
-            // It should be ready to be loaded
-            self.loadModule(module)
-          }
+        var target = event.currentTarget
+
+        if (target.readyState === target.DONE) {
+
+          // Eval the file in window context as it comes.
+          window.eval(target.responseText)
+
+          // It should be ready to be loaded.
+          self.loadModule(module)
         }
       }
 
-      url = ""
-      if (!module.key.match("\.js"))
-        url = module.key + ".js"
+      // Target URL.
+      var url = ""
 
+      // If doesn't have the module .js extension add it.
+      if (!module.key.match("\.js")) url = module.key + ".js"
+
+      // Log stuff
       console.log("Net Fetch: " + url)
 
+      // Initiate request.
       xhr(url, handler)
     },
 
