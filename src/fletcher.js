@@ -21,6 +21,13 @@
     return (typeof str === "string")
   }
 
+  var xhr = function (url, fn) {
+    var client = new XMLHttpRequest()
+    client.onreadystatechange = fn
+    client.open("GET", url)
+    client.send()
+  }
+
   // Logger support
   var logger = {
     logInfo: false,
@@ -57,6 +64,16 @@
 
     // Keep a count of anonymous defined modules.
     anonymousModulesCount: 0,
+
+    // Indicates how much attempts to be loaded a module can get before
+    // try to fetch it from the network.
+    failThreshold: 1,
+
+    moduleDefinitionBasicTemplate: function(moduleKey) {
+      return {
+        loaded: false, key: moduleKey, dependencies: [], fails: 0, namespace: null
+      }
+    },
 
     // Set a function to be called when all dependencies are loaded.
     //
@@ -130,26 +147,21 @@
         }
       }
 
-      // Keep a copy of original module dependencies.
-      var originalDependencies = dependencies.slice(0)
-
       // The module will not depend anymore on resolved dependencies.
       dependencies = this.rejectSolvedDependencies(dependencies)
 
       // Module
-      var module = this.getModuleByKey(key) || {}
-
-      module.key = key
-      module.namespace = null
-      module.originalDependencies = originalDependencies
-      module.dependencies = dependencies
-      module.body = body
-      module.loaded = false
-
-      this.tree[key]= module
+      var module = this.getModuleByKey(key) || this.moduleDefinitionBasicTemplate(key)
 
       // Create module definitions for dependencies in the module beign defined.
-      this.insertDependenciesOnTree(dependencies)
+      module.originalDependencies = this.insertDependenciesOnTree(dependencies)
+
+      // Keep a copy of original module dependencies.
+      module.dependencies = module.originalDependencies.slice(0)
+
+      module.body = body
+
+      this.tree[key] = module
 
       // If module has no dependencies it can be loaded synchronously.
       if (dependencies.length === 0)
@@ -162,8 +174,10 @@
     //
     // dependenciesArray - Array of module definition dependencies.
     //
-    // Returns nothing.
+    // Returns stripped dep array.
     insertDependenciesOnTree: function (dependenciesArray) {
+
+      var strippedDependenciesArray = []
 
       for (var i in dependenciesArray) {
         // Determine module key and namespace to wait for if it isn't a standard
@@ -171,13 +185,17 @@
         var keySplit = dependenciesArray[i].split(":"),
             moduleKey = keySplit[0],
             waitForNamespace = keySplit[1],
-            module = this.getModuleByKey(moduleKey) || {loaded: false, key: moduleKey}
+            module = this.getModuleByKey(moduleKey) || this.moduleDefinitionBasicTemplate(moduleKey)
 
         if (waitForNamespace)
           module.waitForNamespace = waitForNamespace
 
         this.setModuleByKey(moduleKey, module)
+
+        strippedDependenciesArray.push(moduleKey)
       }
+
+      return strippedDependenciesArray
     },
 
     // Load a module based on his key string.
@@ -298,7 +316,8 @@
       var dependenciesNamespaces = new Array()
 
       for(var i in dependencies) {
-        dependenciesNamespaces.push(this.keyToNamespace(dependencies[i]))
+        var depModule = this.getModuleByKey(dependencies[i])
+        dependenciesNamespaces.push(depModule.namespace)
       }
 
       return dependenciesNamespaces
@@ -310,7 +329,7 @@
     //
     loadModule: function (module) {
 
-      var ret, loadedAs
+      var ret = loadedAs = null
 
       // Is the module defined by a `function` ?
       if (typeof module.body === "function") {
@@ -336,18 +355,25 @@
         loadedAs = "as Object"
 
       // Is it defined in the `local` namespace?
-      } else if (ret = this.keyToNamespaceByContext(module.key, this.mainContext)) {
+      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespace || module.key, this.mainContext)) {
         module.namespace = ret
 
         loadedAs = "from Main namespace"
 
       // Is it defined in the `global` namespace?
-      } else if (ret = this.keyToNamespaceByContext(module.key, this.rootContext)) {
+      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespace || module.key, this.rootContext)) {
         module.namespace = ret
 
         loadedAs = "from Root namespace"
 
+      // Has this module reached the fail threshold value?
+      // Attempt to fetch it from HTTP.
+      } else if (module.fails > this.failThreshold && module.dependencies.length == 0) {
+        this.fetchFromNetwork(module)
+        return false
+
       } else {
+        module.fails++
         return false
       }
 
@@ -545,6 +571,31 @@
       }, this)
 
       return !fail
+    },
+
+    fetchFromNetwork: function (module) {
+
+      self = this
+
+      var handler = function () {
+        if (this.readyState === this.DONE) {
+
+          // TODO: Why this if?
+          if (this.responseText !== "") {
+            window.eval(this.responseText)
+            // It should be ready to be loaded
+            self.loadModule(module)
+          }
+        }
+      }
+
+      url = ""
+      if (!module.key.match("\.js"))
+        url = module.key + ".js"
+
+      console.log("Net Fetch: " + url)
+
+      xhr(url, handler)
     },
 
     // Fetch a module definition from definition module tree.
