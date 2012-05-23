@@ -106,6 +106,7 @@ scenario("Define Anonymous modules", {
 })
 
 scenario("Define named modules", {
+
   "should define modules with dependencies that doesn't exist yet": function (g) {
 
     define("module_c", ["module_a", "module_b"],
@@ -160,7 +161,7 @@ scenario("Define named modules", {
   "should require specific namespace of an external lib": function (g) {
 
     g.async( function () {
-      define("my_root/my_module", ["Backbone.View"], function (backbone_view) {
+      define("my_root2/my_module", ["Backbone.View"], function (backbone_view) {
         var view = new backbone_view
         g.assertEqual(view.tagName, "div")
         g.end()

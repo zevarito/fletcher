@@ -23,7 +23,7 @@
 
   // Logger support
   var logger = {
-    logInfo: true,
+    logInfo: false,
 
     info: function (msg) {
       if (this.logInfo) console.log(msg)
@@ -137,7 +137,7 @@
       dependencies = this.rejectSolvedDependencies(dependencies)
 
       // Module
-      var module = this.tree[key] || {}
+      var module = this.getModuleByKey(key) || {}
 
       module.key = key
       module.namespace = null
@@ -146,18 +146,23 @@
       module.body = body
       module.loaded = false
 
-      this.tree[key] = module
+      this.tree[key]= module
 
       // Create module definitions for dependencies in the module beign defined.
       this.insertDependenciesOnTree(dependencies)
 
       // If module has no dependencies it can be loaded synchronously.
       if (dependencies.length === 0)
-        this.loadModule(this.tree[key])
+        this.loadModule(this.getModuleByKey(key))
       else
         this.defer(this.startWorker)
     },
 
+    // Create module definitions in the tree for each dependency.
+    //
+    // dependenciesArray - Array of module definition dependencies.
+    //
+    // Returns nothing.
     insertDependenciesOnTree: function (dependenciesArray) {
 
       for (var i in dependenciesArray) {
@@ -166,12 +171,12 @@
         var keySplit = dependenciesArray[i].split(":"),
             moduleKey = keySplit[0],
             waitForNamespace = keySplit[1],
-            module = this.tree[moduleKey] || {loaded: false, key: moduleKey}
+            module = this.getModuleByKey(moduleKey) || {loaded: false, key: moduleKey}
 
         if (waitForNamespace)
           module.waitForNamespace = waitForNamespace
 
-        this.tree[moduleKey] = module
+        this.setModuleByKey(moduleKey, module)
       }
     },
 
@@ -184,6 +189,11 @@
       // Is `require` used in the form of `define` anonymous modules?
       if (isArray(moduleKey)) {
         this.define.apply(this, arguments)
+
+      // If we have that module loaded and cached.
+      } else if (this.getModuleByKey(moduleKey) && this.getModuleByKey(moduleKey).loaded) {
+        return this.getModuleByKey(moduleKey).namespace
+
       } else {
         return this.keyToNamespace(moduleKey)
       }
@@ -195,7 +205,7 @@
     defer: function(fn, t) {
       if (this.async) {
         t = t || 0
-        context = this
+        var context = this
         setTimeout(function() { fn.apply(context) }, t)
       } else {
         fn.apply(this)
@@ -247,7 +257,7 @@
       for (key in this.tree) {
 
         // Take the module from the tree.
-        var module = this.tree[key]
+        var module = this.getModuleByKey(key)
 
         // We may end up traversing already loaded modules.
         if (module.loaded)
@@ -261,10 +271,11 @@
 
           // Attempt to satisfy those dependencies.
           // If everything ok the module will be loaded.
-          if (this.satisfy(module))
+          if (this.satisfy(module)) {
             this.loadModule(module)
-          else
+          } else {
             remainingModulesCount++
+          }
 
         } else {
           this.loadModule(module)
@@ -295,12 +306,11 @@
 
     // Loads a Module, and remove it from other modules as dependency.
     //
-    // Returns Nothing.
+    // Returns Boolean.
     //
     loadModule: function (module) {
 
-      var ret,
-          loadedAs
+      var ret, loadedAs
 
       // Is the module defined by a `function` ?
       if (typeof module.body === "function") {
@@ -354,6 +364,9 @@
         this.removeDependency(module.key)
 
         return true
+
+      } else {
+        return false
       }
     },
 
@@ -369,7 +382,7 @@
       var newDependencies = []
 
       // Iterate over module dependencies.
-      for (dep in dependencies) {
+      for (var dep in dependencies) {
 
         // Iterate over dependenciesSolved array to find out if
         // the dependency was already loaded.
@@ -393,7 +406,7 @@
       for (var key in this.tree) {
 
         // Take module and initialize a new array of dependencies.
-        var module = this.tree[key],
+        var module = this.getModuleByKey(key),
             newRequirements = new Array()
 
         // Iterate over module dependencies.
@@ -471,18 +484,18 @@
     //
     // Returns Boolean.
     //
-    writeKeyNamespace: function(key, namespace) {
-      var parts = key.split("."),
+    writeKeyNamespace: function(key, namespace, context) {
+      var parts = key.split("/"),
           base = parts.slice(0, -1),
           name = parts.slice(-1).toString()
 
-      var context = this.mainContext
+      var context = context || this.mainContext
 
       for (var i in base) {
         var part = base[i]
 
         if(!context[part])
-          return false
+          context[part] = {}
 
         context = context[part]
       }
@@ -505,20 +518,23 @@
       // Iterate over module dependencies
       module.dependencies.forEach(function(moduleKey) {
 
-        // Is that module dependency ready to be loaded? Attempt to load it then.
-        if (this.tree[moduleKey].dependencies.length == 0) {
+        // Get module dependency from Tree
+        var moduleInTree = this.getModuleByKey(moduleKey)
 
-          if (this.loadModule(this.tree[moduleKey])) {
+        // Is that module dependency ready to be loaded? Attempt to load it then.
+        if (moduleInTree.dependencies.length === 0) {
+
+          if (this.loadModule(moduleInTree)) {
             return // Skip to next iteration.
 
           // If we couldn't load and we are running Async declare the
           // dependency as missing.
-          } else if (!this.loadModule(this.tree[moduleKey]) && this.async) {
+          } else if (!this.loadModule(moduleInTree) && this.async) {
             logger.info("Missing: " + moduleKey)
 
           // If we couldn't load and we are running Sync on the server
           // attempt to load the module before continue.
-          } else if (!this.loadModule(this.tree[moduleKey]) && !this.async) {
+          } else if (!this.loadModule(moduleInTree) && !this.async) {
             logger.info("I'll find you: " + moduleKey)
             this.traverse()
             return // Skip to next iteration.
@@ -529,6 +545,26 @@
       }, this)
 
       return !fail
+    },
+
+    // Fetch a module definition from definition module tree.
+    //
+    // moduleKey - String representing the module key.
+    //
+    // Returns a module definition.
+    getModuleByKey: function (moduleKey) {
+      return this.tree[moduleKey]
+    },
+
+    // Sets a module definition in the tree.
+    //
+    // moduleKey - String representing the module key.
+    // module    - Object module definition.
+    //
+    // Returns the module definition.
+    setModuleByKey: function (moduleKey, module) {
+      this.tree[moduleKey] = module
+      return this.getModuleByKey(moduleKey)
     }
   }
 
@@ -543,7 +579,8 @@
     require: function() { return fletcher.require.apply(fletcher, arguments) },
     onComplete: function() { return fletcher.onComplete.apply(fletcher, arguments) },
     tree: fletcher.tree,
-    logger: logger
+    logger: logger,
+    mainContext: fletcher.mainContext
   }
 
   // Declare itself as an AMD loader.
