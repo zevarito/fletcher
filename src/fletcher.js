@@ -607,7 +607,7 @@
       if (!module.key.match("\.js")) url = module.key + ".js"
 
       // Log stuff
-      console.log("Net Fetch: " + url)
+      logger.info("Net Fetch: " + url)
 
       // Initiate request.
       xhr(url, handler)
