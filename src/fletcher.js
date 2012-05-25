@@ -148,9 +148,6 @@
         }
       }
 
-      // The module will not depend anymore on resolved dependencies.
-      dependencies = this.rejectSolvedDependencies(dependencies)
-
       // Module
       var module = this.getModuleByKey(key) || this.moduleDefinitionBasicTemplate(key)
 
@@ -158,7 +155,10 @@
       module.originalDependencies = this.insertDependenciesOnTree(dependencies)
 
       // Keep a copy of original module dependencies.
-      module.dependencies = module.originalDependencies.slice(0)
+      dependencies = module.originalDependencies.slice(0)
+
+      // The module will not depend anymore on resolved dependencies.
+      module.dependencies = this.rejectSolvedDependencies(dependencies)
 
       module.body = body
 
