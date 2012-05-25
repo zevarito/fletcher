@@ -5,7 +5,7 @@ scenario = Gerbil.scenario
 if (typeof __PHANTOMJS__ !== "undefined")
   Gerbil.console = Gerbil.Console.pretty
 
-fletcher.logger.logInfo = true
+//fletcher.logger.logInfo = true
 
 scenario("Fletcher HTTP", {
   "a": function (g) {

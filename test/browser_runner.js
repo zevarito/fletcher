@@ -2,6 +2,9 @@
 // Phantom.js script
 //
 //
+
+var system = require('system')
+
 var fs = require('fs');
 
 var page = require('webpage').create()
@@ -32,4 +35,22 @@ page.onInitialized = function () {
   })
 }
 
-page.open("./test/browser_context.html", function (status) {})
+var tests = [
+  "test/browser_context.html",
+  "test/browser_http_context_test.html"
+]
+
+;(executeNextTest = function () {
+  var test = tests.pop()
+
+  if (test !== undefined) {
+    page.open(test, function (status) {})
+  } else {
+    phantom.exit()
+  }
+
+  setTimeout(function () {
+    executeNextTest()
+  }, 2000)
+
+})()
