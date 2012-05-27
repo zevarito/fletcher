@@ -26,10 +26,10 @@ scenario("Security concerns", {
   "should not define modules in the root namespace": function (g) {
     g.assert(typeof a === "undefined")
 
-    define("a", {})
+    define("a1", {})
 
     g.async(function () {
-      define(["a"], function (a) {
+      define(["a1"], function (a) {
         g.assert(typeof window.a === "undefined")
         g.end()
       })
@@ -49,12 +49,12 @@ scenario("Define Anonymous modules", {
 
   "should be able to setup a callback to know when all modules have been loaded": function (g) {
     g.async(function () {
-      define("a", {})
-      define("my_module", ["a"], function (a) { return {a: "Hey!"} })
+      define("a2", {})
+      define("my_module1", ["a2"], function (a) { return {a: "Hey!"} })
     })
 
     fletcher.onComplete(function () {
-      g.assertEqual(require("my_module").a, "Hey!")
+      g.assertEqual(require("my_module1").a, "Hey!")
       g.end()
     })
   },
@@ -78,29 +78,29 @@ scenario("Define Anonymous modules", {
 
   "should support anonymous module definitions with dependencies": function (g) {
 
-    define(["a", "b"], function (a, b) {
-      g.assertEqual(a, {a: "a"})
-      g.assertEqual(b, {b: "b"})
+    define(["dep1", "dep2"], function (a, b) {
+      g.assertEqual("a", a.a)
+      g.assertEqual("b", b.b)
       g.end()
     })
 
     g.async(function () {
-      define("a", function () { return {a: "a"} })
-      define("b", function () { return {b: "b"} })
+      define("dep1", function () { return {a: "a"} })
+      define("dep2", function () { return {b: "b"} })
     })
   },
 
   "should support anonymous module definition using require": function (g) {
 
-    require(["a", "b"], function (a,b) {
+    require(["a3", "b3"], function (a,b) {
       g.assertType(Object, a)
       g.assertType(Object, b)
       g.end()
     })
 
     g.async(function () {
-      define("a", {})
-      define("b", {})
+      define("a3", {})
+      define("b3", {})
     })
   }
 })
@@ -126,7 +126,7 @@ scenario("Define named modules", {
   "should wait for Underscore to be loaded": function (g) {
 
     g.async(function () {
-      define("myLib", ["_"], function (underscore) {
+      define("myLib1", ["_"], function (underscore) {
         g.assertEqual(underscore.isObject(this), true)
         g.end()
       })
@@ -136,7 +136,7 @@ scenario("Define named modules", {
   "should wait for a whole dependency chain": function (g) {
 
     g.async(function () {
-      define("namespace/myLib", ["$", "_", "Backbone"], function (jQ, underscore, backbone) {
+      define("namespace/myLib2", ["$", "_", "Backbone"], function (jQ, underscore, backbone) {
         var view = new backbone.View()
         g.assertEqual(jQ("<p>some</p>").html(), "some")
         g.assertEqual(underscore.isObject(this), true)
@@ -147,13 +147,13 @@ scenario("Define named modules", {
   },
 
   "should accept multiple namespaces": function (g) {
-    define("my_root/my_module", function () {
+    define("my_root/my_module2", function () {
       return {
         something: function () { return "Hello!" }
       }
     })
 
-    var m = require("my_root/my_module")
+    var m = require("my_root/my_module2")
 
     g.assertEqual(m.something(), "Hello!")
   },
@@ -161,7 +161,7 @@ scenario("Define named modules", {
   "should require specific namespace of an external lib": function (g) {
 
     g.async( function () {
-      define("my_root2/my_module", ["Backbone.View"], function (backbone_view) {
+      define("my_root2/my_module1", ["Backbone.View"], function (backbone_view) {
         var view = new backbone_view
         g.assertEqual(view.tagName, "div")
         g.end()
