@@ -5,6 +5,10 @@
     return (typeof fn === "function")
   }
 
+  var isUndefined = function (sth) {
+    return (typeof sth === "undefined")
+  }
+
   var isArray = function (arr) {
     return Object.prototype.toString.apply(arr) === '[object Array]'
   }
@@ -19,6 +23,19 @@
 
   var isString = function (str) {
     return (typeof str === "string")
+  }
+
+  var isObjectEmpty = function (obj) {
+    var empty = true
+
+    for (var i in obj) {
+      if (typeof obj[i] !== "undefined") {
+        empty = false
+        break
+      }
+    }
+
+    return empty
   }
 
   var xhr = function (url, fn) {
@@ -38,7 +55,22 @@
     }
   }
 
-  // Implementation
+  // Preseve/Restore variables in `this` context.
+  var context = context
+      preserved = {}
+
+  var preserve = function (name) {
+    preserved[name] = this[name]
+  }
+
+  // Restore variable relative to context.
+  var restore = function (name) {
+    this[name] = preserved[name]
+  }
+
+  //
+  // Loader Implementation
+  //
   var fletcher = {
 
     // Indicates if we will be using Fletcher in Async or Sync way.
@@ -72,7 +104,7 @@
 
     moduleDefinitionBasicTemplate: function(moduleKey) {
       return {
-        loaded: false, key: moduleKey, dependencies: [], fails: 0, namespace: null
+        loaded: false, key: moduleKey, dependencies: [], fails: 0, namespace: undefined, exports: undefined, fetched: false
       }
     },
 
@@ -367,10 +399,21 @@
 
         loadedAs = "from Root namespace"
 
+      // Is this module already loaded by `exports`.
+      // It may comes fron network and have been loaded with eval()
+      } else if (!isUndefined(module.exports)) {
+
+        module.namespace = module.exports
+
+        loadedAs = "with Exports"
+
       // Has this module reached the fail threshold value?
       // Attempt to fetch it from HTTP.
-      } else if (module.fails > this.failThreshold && module.dependencies.length == 0) {
+      } else if (module.fails > this.failThreshold &&
+          module.dependencies.length == 0 && !module.fetched) {
+
         this.fetchFromNetwork(module)
+        // And let it fail, next round it may be loaded as a Namespace or with Commonjs exports.
         return false
 
       } else {
@@ -582,23 +625,8 @@
     //
     fetchFromNetwork: function (module) {
 
-      // Preserve fletcher conext
+      // Preserve fletcher context
       var self = this
-
-      // Define an XHR handler callback function.
-      var handler = function (event) {
-
-        var target = event.currentTarget
-
-        if (target.readyState === target.DONE) {
-
-          // Eval the file in window context as it comes.
-          window.eval(target.responseText)
-
-          // It should be ready to be loaded.
-          self.loadModule(module)
-        }
-      }
 
       // Target URL.
       var url = ""
@@ -609,8 +637,60 @@
       // Log stuff
       logger.info("Net Fetch: " + url)
 
+      console.log(url)
+
       // Initiate request.
-      xhr(url, handler)
+      xhr(url, this.xhrHandler(this, module))
+    },
+
+    // Define an XHR handler callback function.
+    // self   - fletcher
+    // module - the module definition object
+    //
+    // Returns a xhr handler function.
+    xhrHandler: function (self, module) {
+
+      var handler = function (event) {
+
+        var target = event.currentTarget
+            // CommonJS support.
+            use_exports = false
+
+        if (target.readyState === target.DONE) {
+
+          module.fetched = true
+
+          // Preserve `global` module and exports variables.
+          preserve('exports')
+
+          // Mock module and exports.
+          exports = {}
+
+          // Eval the file in window context as it comes.
+          window.eval(target.responseText)
+
+          // Use exports if it isn't undefined and also it isn't an object (it was modified).
+          // We accept `function`, `array` etc. except `object`.
+          // Or
+          // Use exports if it is a modified `object`, we accept it.
+          if (!isUndefined(exports) && !isObject(exports) ||
+                isObject(exports) && !isObjectEmpty(exports)) {
+
+            if (module.waitForNamespace)
+              module.exports = exports[module.waitForNamespace]
+            else
+              module.exports = exports
+          }
+
+          // It should be ready to be loaded.
+          self.loadModule(module)
+
+          // Restore `global` module and exports variables.
+          restore('exports')
+        }
+      }
+
+      return handler
     },
 
     // Fetch a module definition from definition module tree.
@@ -635,7 +715,9 @@
   }
 
   // Keep a reference to the root context.
+  // FIXME: This should be either window or Node equivalent. IE Global namespace.
   fletcher.rootContext = this
+
   // Create a base namespace where modules will be loaded.
   fletcher.mainContext = {}
 
