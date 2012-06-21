@@ -38,14 +38,6 @@
     return empty
   }
 
-  var xhr = function (url, fn) {
-    var client = new XMLHttpRequest()
-    client.onreadystatechange = fn
-    client.open("GET", url)
-    client.setRequestHeader("Content-Type", "text/plain;charset=UTF-8")
-    client.send()
-  }
-
   // Logger support
   var logger = {
     logInfo: false,
@@ -101,6 +93,20 @@
     // Indicates how much attempts to be loaded a module can get before
     // try to fetch it from the network.
     failThreshold: 1,
+
+    // Append to url to force avoid cache.
+    timestamp: "",
+
+    // Add an Script tag to document head.
+    insertScriptTag: function (url) {
+      var head = document.getElementsByTagName("head")[0],
+          script = document.createElement("script")
+
+      script.src = url + "?timestamp=" + this.timestamp
+      script.async = true
+
+      head.appendChild(script)
+    },
 
     moduleDefinitionBasicTemplate: function(moduleKey) {
       return {
@@ -625,9 +631,6 @@
     //
     fetchFromNetwork: function (module) {
 
-      // Preserve fletcher context
-      var self = this
-
       // Target URL.
       var url = ""
 
@@ -637,60 +640,7 @@
       // Log stuff
       logger.info("Net Fetch: " + url)
 
-      console.log(url)
-
-      // Initiate request.
-      xhr(url, this.xhrHandler(this, module))
-    },
-
-    // Define an XHR handler callback function.
-    // self   - fletcher
-    // module - the module definition object
-    //
-    // Returns a xhr handler function.
-    xhrHandler: function (self, module) {
-
-      var handler = function (event) {
-
-        var target = event.currentTarget
-            // CommonJS support.
-            use_exports = false
-
-        if (target.readyState === target.DONE) {
-
-          module.fetched = true
-
-          // Preserve `global` module and exports variables.
-          preserve('exports')
-
-          // Mock module and exports.
-          exports = {}
-
-          // Eval the file in window context as it comes.
-          window.eval(target.responseText)
-
-          // Use exports if it isn't undefined and also it isn't an object (it was modified).
-          // We accept `function`, `array` etc. except `object`.
-          // Or
-          // Use exports if it is a modified `object`, we accept it.
-          if (!isUndefined(exports) && !isObject(exports) ||
-                isObject(exports) && !isObjectEmpty(exports)) {
-
-            if (module.waitForNamespace)
-              module.exports = exports[module.waitForNamespace]
-            else
-              module.exports = exports
-          }
-
-          // It should be ready to be loaded.
-          self.loadModule(module)
-
-          // Restore `global` module and exports variables.
-          restore('exports')
-        }
-      }
-
-      return handler
+      this.insertScriptTag(url)
     },
 
     // Fetch a module definition from definition module tree.
@@ -728,7 +678,10 @@
     onComplete: function() { return fletcher.onComplete.apply(fletcher, arguments) },
     tree: fletcher.tree,
     logger: logger,
-    mainContext: fletcher.mainContext
+    mainContext: fletcher.mainContext,
+    setTimestamp: function (timestamp) {
+      fletcher.timestamp = timestamp
+    }
   }
 
   // Declare itself as an AMD loader.

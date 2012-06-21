@@ -7,7 +7,7 @@ if (typeof __PHANTOMJS__ !== "undefined")
 
 fletcher.logger.logInfo = true
 
-scenario("Fletcher HTTP/XHR", {
+scenario("Fletcher HTTP", {
   "load underscore from http waiting for a namespace": function (g) {
     g.async(function () {
 
