@@ -38,14 +38,6 @@
     return empty
   }
 
-  var xhr = function (url, fn) {
-    var client = new XMLHttpRequest()
-    client.onreadystatechange = fn
-    client.open("GET", url)
-    client.setRequestHeader("Content-Type", "text/plain;charset=UTF-8")
-    client.send()
-  }
-
   // Logger support
   var logger = {
     logInfo: false,
@@ -114,6 +106,14 @@
       script.async = true
 
       head.appendChild(script)
+    },
+
+    xhr: function (url, fn) {
+      var client = new XMLHttpRequest()
+      client.onreadystatechange = fn
+      client.open("GET", url + "?timestamp=" + this.timestamp)
+      client.setRequestHeader("Content-Type", "text/plain;charset=UTF-8")
+      client.send()
     },
 
     moduleDefinitionBasicTemplate: function(moduleKey) {
@@ -659,7 +659,7 @@
       if (url.match("\.js"))
         this.insertScriptTag(url)
       else
-        xhr(url, this.xhrHandler(module))
+        this.xhr(url, this.xhrHandler(module))
     },
 
     // Define an XHR handler callback function.
