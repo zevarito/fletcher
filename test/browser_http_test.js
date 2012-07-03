@@ -29,5 +29,17 @@ scenario("Fletcher HTTP", {
       })
 
     })
+  },
+
+  "load modules as text instead of evaluate them when extension is not js": function (g) {
+
+    g.async(function () {
+
+      define("my_module_with_shaders", ["vendor/vertex_shader.vs"], function (vs) {
+        g.assertEqual(vs, "THIS IS A VERTEX SHADER TEXT FILE\n")
+        g.end()
+      })
+
+    })
   }
 })

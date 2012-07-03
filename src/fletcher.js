@@ -38,6 +38,14 @@
     return empty
   }
 
+  var xhr = function (url, fn) {
+    var client = new XMLHttpRequest()
+    client.onreadystatechange = fn
+    client.open("GET", url)
+    client.setRequestHeader("Content-Type", "text/plain;charset=UTF-8")
+    client.send()
+  }
+
   // Logger support
   var logger = {
     logInfo: false,
@@ -393,6 +401,12 @@
 
         loadedAs = "as Object"
 
+      // Is the module defined by `text`
+      } else if (typeof module.body === "string") {
+        module.namespace = module.body
+
+        loadedAs = "as Text"
+
       // Is it defined in the `local` namespace?
       } else if (ret = this.keyToNamespaceByContext(module.waitForNamespace || module.key, this.mainContext)) {
         module.namespace = ret
@@ -416,10 +430,10 @@
       // Has this module reached the fail threshold value?
       // Attempt to fetch it from HTTP.
       } else if (module.fails > this.failThreshold &&
-          module.dependencies.length == 0 && !module.fetched) {
+          module.dependencies.length === 0 && !module.fetched) {
 
         this.fetchFromNetwork(module)
-        // And let it fail, next round it may be loaded as a Namespace or with Commonjs exports.
+        // And let it fail, next round it may be loaded as a Namespace or just Text.
         return false
 
       } else {
@@ -632,15 +646,39 @@
     fetchFromNetwork: function (module) {
 
       // Target URL.
-      var url = ""
+      var url = module.key
 
-      // If doesn't have the module .js extension add it.
-      if (!module.key.match("\.js")) url = module.key + ".js"
+      // If the module doesn't have extension we add 'js' by default.
+      if (!module.key.match(/\.[a-zA-Z]+$/)) url = module.key + ".js"
 
       // Log stuff
       logger.info("Net Fetch: " + url)
 
-      this.insertScriptTag(url)
+      // If the module is a script we add a tag for it, otherwise we evaulte
+      // it as text file.
+      if (url.match("\.js"))
+        this.insertScriptTag(url)
+      else
+        xhr(url, this.xhrHandler(module))
+    },
+
+    // Define an XHR handler callback function.
+    // module - the module definition object
+    //
+    // Returns a xhr handler function.
+    xhrHandler: function (module) {
+
+      var handler = function (event) {
+
+        var target = event.currentTarget
+
+        if (target.readyState === target.DONE) {
+          module.fetched = true
+          module.body = target.responseText
+        }
+      }
+
+      return handler
     },
 
     // Fetch a module definition from definition module tree.
