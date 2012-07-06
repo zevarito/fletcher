@@ -1,3 +1,5 @@
+# WARNING: Outdated doc!
+
 # **Fletcher** is a lightweight Javascript module loader
 
 It features Async behavior on browser side and Sync behavior when used on the server.
