@@ -21,7 +21,7 @@ It is still a work in progress.
 ## Roadmap
 
 - Browser support.
-- Fetch resources from HTTP (On the way)
+- Fetch resources from HTTP as JS and Text
 - [AMDjs Tests] (https://github.com/amdjs/amdjs-tests) (On the way)
 - Benchmarks
 
