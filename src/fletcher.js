@@ -103,6 +103,7 @@
           script = document.createElement("script")
 
       script.src = url + "?timestamp=" + this.timestamp
+      script.type = "text/javascript"
       script.async = true
 
       head.appendChild(script)
@@ -660,6 +661,8 @@
         this.insertScriptTag(url)
       else
         this.xhr(url, this.xhrHandler(module))
+
+      module.fetched = true
     },
 
     // Define an XHR handler callback function.
@@ -719,7 +722,8 @@
     mainContext: fletcher.mainContext,
     setTimestamp: function (timestamp) {
       fletcher.timestamp = timestamp
-    }
+    },
+    insertScriptTag: fletcher.insertScriptTag
   }
 
   // Declare itself as an AMD loader.
