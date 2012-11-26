@@ -48,7 +48,7 @@
   }
 
   // Preseve/Restore variables in `this` context.
-  var context = context
+  var context = context,
       preserved = {}
 
   var preserve = function (name) {
