@@ -119,7 +119,14 @@
 
     moduleDefinitionBasicTemplate: function(moduleKey) {
       return {
-        loaded: false, key: moduleKey, dependencies: [], fails: 0, namespace: undefined, exports: undefined, fetched: false
+        loaded: false,
+        key: moduleKey,
+        dependencies: [],
+        fails: 0,
+        namespace: undefined,
+        exports: undefined,
+        waitForNamespaces: [],
+        fetched: false
       }
     },
 
@@ -218,7 +225,7 @@
         this.defer(this.startWorker)
     },
 
-    // Create module definitions in the tree for each dependency.
+    // Create module definitions in the tree for each dependency string.
     //
     // dependenciesArray - Array of module definition dependencies.
     //
@@ -232,11 +239,12 @@
         // module definition.
         var keySplit = dependenciesArray[i].split(":"),
             moduleKey = keySplit[0],
-            waitForNamespace = keySplit[1],
             module = this.getModuleByKey(moduleKey) || this.moduleDefinitionBasicTemplate(moduleKey)
 
-        if (waitForNamespace)
-          module.waitForNamespace = waitForNamespace
+        if (keySplit.length === 2)
+          module.waitForNamespaces = [ keySplit[1] ]
+        else if (keySplit.length > 2)
+          module.waitForNamespaces = keySplit.slice(1)
 
         this.setModuleByKey(moduleKey, module)
 
@@ -409,16 +417,22 @@
         loadedAs = "as Text"
 
       // Is it defined in the `local` namespace?
-      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespace || module.key, this.mainContext)) {
-        module.namespace = ret
+      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespaces[0] || module.key, this.mainContext)) {
+        module.waitForNamespaces.shift(0)
 
-        loadedAs = "from Main namespace"
+        if (module.waitForNamespaces.length === 0) {
+          module.namespace = ret
+          loadedAs = "from Main namespace"
+        }
 
       // Is it defined in the `global` namespace?
-      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespace || module.key, this.rootContext)) {
-        module.namespace = ret
+      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespaces[0] || module.key, this.rootContext)) {
+        module.waitForNamespaces.shift(0)
 
-        loadedAs = "from Root namespace"
+        if (module.waitForNamespaces.length === 0) {
+          module.namespace = ret
+          loadedAs = "from Root namespace"
+        }
 
       // Is this module already loaded by `exports`.
       // It may comes fron network and have been loaded with eval()
@@ -443,7 +457,7 @@
       }
 
       // Has the namespace been writed in the given key?
-      if (this.writeKeyNamespace(module.key, module.namespace)) {
+      if (module.namespace && this.writeKeyNamespace(module.key, module.namespace)) {
 
         // Flag module as loaded.
         module.loaded = true
