@@ -126,8 +126,7 @@
         namespace: undefined,
         exports: undefined,
         waitForNamespaces: [],
-        fetched: false,
-        foundCount: 0,
+        fetched: false
       }
     },
 
@@ -419,12 +418,6 @@
 
       // Is it defined in the `local` namespace?
       } else if (ret = this.keyToNamespaceByContext(module.waitForNamespaces[0] || module.key, this.mainContext)) {
-
-        if (!module.foundCount && !module.foundCount > 5) {
-          module.foundCount++
-          return
-        }
-
         module.waitForNamespaces.shift(0)
 
         if (module.waitForNamespaces.length === 0) {
@@ -434,12 +427,6 @@
 
       // Is it defined in the `global` namespace?
       } else if (ret = this.keyToNamespaceByContext(module.waitForNamespaces[0] || module.key, this.rootContext)) {
-
-        if (!module.foundCount) {
-          module.foundCount = true
-          return
-        }
-
         module.waitForNamespaces.shift(0)
 
         if (module.waitForNamespaces.length === 0) {
