@@ -97,16 +97,28 @@
     // Append to url to force avoid cache.
     timestamp: "",
 
-    // Add an Script tag to document head.
+    // Relative/absolute path to append to module definition key/name.
+    systemPath: "./",
+
+    // Add an Script tag to document head if its running in a browser,
+    // otherwise require the module inmediatly.
     insertScriptTag: function (url) {
-      var head = document.getElementsByTagName("head")[0],
-          script = document.createElement("script")
 
-      script.src = url + "?timestamp=" + this.timestamp
-      script.type = "text/javascript"
-      script.async = true
+      if (fletcher.async) {
 
-      head.appendChild(script)
+        var head = window.document.getElementsByTagName("head")[0],
+            script = window.document.createElement("script")
+
+        script.src = url + "?timestamp=" + this.timestamp
+        script.type = "text/javascript"
+        script.async = true
+
+        head.appendChild(script)
+
+      } else {
+        var loc = this.systemPath + "/" + url
+        module.require(loc)
+      }
     },
 
     xhr: function (url, fn) {
@@ -573,9 +585,9 @@
         parts = key.split("/")
 
       try {
-        parts.forEach(function(part, i) {
-          context = context[part]
-        })
+        for (var i in parts) {
+          context = context[parts[i]]
+        }
       } catch(e) {}
 
       return context
@@ -727,13 +739,16 @@
   fletcher.mainContext = {}
 
   // Define fletcher interface.
-  var _interface = {
+  var api = {
     define: function() { return fletcher.define.apply(fletcher, arguments) },
     require: function() { return fletcher.require.apply(fletcher, arguments) },
     onComplete: function() { return fletcher.onComplete.apply(fletcher, arguments) },
     tree: fletcher.tree,
     logger: logger,
     mainContext: fletcher.mainContext,
+    setSystemPath: function (systemPath) {
+      fletcher.systemPath = systemPath
+    },
     setTimestamp: function (timestamp) {
       fletcher.timestamp = timestamp
     },
@@ -741,18 +756,18 @@
   }
 
   // Declare itself as an AMD loader.
-  _interface.define["amd"] = {}
+  api.define["amd"] = {}
 
   // Define a global for module definition.
-  define = _interface.define
+  define = api.define
 
   // If running in Node in Sync mode export the interface.
   if (!fletcher.async) {
-    module.exports = _interface
+    module.exports = api
   } else {
     // If running in the browser define globals `require` and `fletcher`.
-    this["fletcher"] = _interface
-    this["require"] = _interface.require
+    this["fletcher"] = api
+    this["require"] = api.require
   }
 
 }).call(this)
