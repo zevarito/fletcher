@@ -72,6 +72,9 @@
 
     mainContext: null,
 
+    // Keep track of the order that modules were loaded.
+    loadedOrder: [],
+
     // Dependency tree object
     tree: {},
     traversing: false,
@@ -100,40 +103,12 @@
     // Relative/absolute path to append to module definition key/name.
     systemPath: "./",
 
-    // Add an Script tag to document head if its running in a browser,
-    // otherwise require the module inmediatly.
-    insertScriptTag: function (url) {
-
-      if (fletcher.async) {
-
-        var head = window.document.getElementsByTagName("head")[0],
-            script = window.document.createElement("script")
-
-        script.src = url + "?timestamp=" + this.timestamp
-        script.type = "text/javascript"
-        script.async = true
-
-        head.appendChild(script)
-
-      } else {
-        var loc = this.systemPath + "/" + url
-        module.require(loc)
-      }
-    },
-
-    xhr: function (url, fn) {
-      var client = new XMLHttpRequest()
-      client.onreadystatechange = fn
-      client.open("GET", url + "?timestamp=" + this.timestamp)
-      client.setRequestHeader("Content-Type", "text/plain;charset=UTF-8")
-      client.send()
-    },
-
     moduleDefinitionBasicTemplate: function(moduleKey) {
       return {
         loaded: false,
         key: moduleKey,
         dependencies: [],
+        originalDependencies: [],
         fails: 0,
         namespace: undefined,
         exports: undefined,
@@ -193,6 +168,8 @@
           dependencies = args[1] || [],
           body = args[2]
 
+      logger.info("Define: " + key)
+
       // It is an anonymous module with no dependencies?
       if (!isString(key) && isFunctionOrObject(key)) {
         body = key
@@ -218,7 +195,7 @@
       var module = this.getModuleByKey(key) || this.moduleDefinitionBasicTemplate(key)
 
       // Create module definitions for dependencies in the module beign defined.
-      module.originalDependencies = this.insertDependenciesOnTree(dependencies)
+      module.originalDependencies = module.originalDependencies.concat(this.insertDependenciesOnTree(dependencies))
 
       // Keep a copy of original module dependencies.
       dependencies = module.originalDependencies.slice(0)
@@ -228,13 +205,15 @@
 
       module.body = body
 
+      // If it was a module already defined (just by being a dep of other modules), let's
+      // reset his fetched state and remove his exports content to allow it to be loaded
+      // as fletcher standard module.
+      module.fetched = false
+      module.exports = undefined
+
       this.tree[key] = module
 
-      // If module has no dependencies it can be loaded synchronously.
-      if (dependencies.length === 0)
-        this.loadModule(this.getModuleByKey(key))
-      else
-        this.defer(this.startWorker)
+      this.defer(this.startWorker)
     },
 
     // Create module definitions in the tree for each dependency string.
@@ -363,7 +342,7 @@
             remainingModulesCount++
           }
 
-        } else {
+        } else if (this.async) {
           this.loadModule(module)
         }
       }
@@ -397,10 +376,32 @@
     //
     loadModule: function (module) {
 
+      // FIXME: We may end scheduling to call this method several times.
+      if (module.loaded)
+        return
+
       var ret = loadedAs = null
 
-      // Is the module defined by a `function` ?
-      if (typeof module.body === "function") {
+      // Is it defined in the `local` namespace?
+      if (ret = this.keyToNamespaceByContext(module.waitForNamespaces[0] || module.key, this.mainContext)) {
+        module.waitForNamespaces.shift(0)
+
+        if (module.waitForNamespaces.length === 0) {
+          module.namespace = ret
+          loadedAs = "from Main namespace"
+        }
+
+      // Is it defined in the `global` namespace?
+      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespaces[0] || module.key, this.rootContext)) {
+        module.waitForNamespaces.shift(0)
+
+        if (module.waitForNamespaces.length === 0) {
+          module.namespace = ret
+          loadedAs = "from Root namespace"
+        }
+
+      // Is it defined with a function body?
+      } else if (typeof module.body === "function") {
 
         // `Unwrap` the module in a temporary namespace.
         module.namespace = module.namespace || {}
@@ -428,26 +429,8 @@
 
         loadedAs = "as Text"
 
-      // Is it defined in the `local` namespace?
-      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespaces[0] || module.key, this.mainContext)) {
-        module.waitForNamespaces.shift(0)
-
-        if (module.waitForNamespaces.length === 0) {
-          module.namespace = ret
-          loadedAs = "from Main namespace"
-        }
-
-      // Is it defined in the `global` namespace?
-      } else if (ret = this.keyToNamespaceByContext(module.waitForNamespaces[0] || module.key, this.rootContext)) {
-        module.waitForNamespaces.shift(0)
-
-        if (module.waitForNamespaces.length === 0) {
-          module.namespace = ret
-          loadedAs = "from Root namespace"
-        }
-
       // Is this module already loaded by `exports`.
-      // It may comes fron network and have been loaded with eval()
+      // It may comes from network and have been loaded with eval()
       } else if (!isUndefined(module.exports)) {
 
         module.namespace = module.exports
@@ -455,13 +438,11 @@
         loadedAs = "with Exports"
 
       // Has this module reached the fail threshold value?
-      // Attempt to fetch it from HTTP.
+      // Attempt to fetch it.
       } else if (module.fails > this.failThreshold &&
           module.dependencies.length === 0 && !module.fetched) {
 
-        this.fetchFromNetwork(module)
-        // And let it fail, next round it may be loaded as a Namespace or just Text.
-        return false
+        this.fetch(module)
 
       } else {
         module.fails++
@@ -476,6 +457,8 @@
 
         // Log it.
         logger.info("Loaded \"" + module.key + "\": " + loadedAs)
+
+        this.loadedOrder.push(module.key)
 
         // Remove as dependency for other modules
         this.removeDependency(module.key)
@@ -633,7 +616,7 @@
       logger.info("Satisfying: \"" + module.key + "\" dependencies: " + req)
 
       // Iterate over module dependencies
-      module.dependencies.forEach(function(moduleKey) {
+      module.dependencies.forEach(function (moduleKey) {
 
         // Get module dependency from Tree
         var moduleInTree = this.getModuleByKey(moduleKey)
@@ -664,31 +647,73 @@
       return !fail
     },
 
-    // Attempts to fetch a module from network.
+    // Attempts to fetch a module either from network or through Node's `requeire`.
     //
     // module - Module definition object.
     //
     // Returns nothing.
     //
-    fetchFromNetwork: function (module) {
+    fetch: function (module) {
 
       // Target URL.
       var url = module.key
 
       // If the module doesn't have extension we add 'js' by default.
-      if (!module.key.match(/\.[a-zA-Z]+$/)) url = module.key + ".js"
-
-      // Log stuff
-      logger.info("Net Fetch: " + url)
-
-      // If the module is a script we add a tag for it, otherwise we evaulte
-      // it as text file.
-      if (url.match("\.js"))
-        this.insertScriptTag(url)
-      else
-        this.xhr(url, this.xhrHandler(module))
+      if (!module.key.match(/\.[a-zA-Z]+$/))
+        url = module.key + ".js"
 
       module.fetched = true
+
+      if (this.async) {
+        logger.info("Net Fetch: " + url)
+        url.match("\.js") ? this.insertScriptTag(module, url) : this.xhr(url, this.xhrHandler(module))
+
+      } else if (module.dependencies.length == 0) {
+
+        logger.info("Node Require: " + url)
+        this.nodeRequire(module, url)
+      }
+
+      return false
+    },
+
+    // Require module with Node js.
+    //
+    nodeRequire: function (module, url) {
+      var loc = this.systemPath + "/" + url
+
+      if (url.match(/.js$/)) {
+
+        module.body = require(loc)
+
+      } else {
+
+        fs = require('fs')
+        var contents = fs.readFileSync("./public/" + url, 'utf8')
+        module.namespace = contents
+      }
+    },
+
+    // Add an Script tag to document head to fetch a new file.
+    //
+    insertScriptTag: function (module, url) {
+
+      var head = window.document.getElementsByTagName("head")[0],
+          script = window.document.createElement("script")
+
+      script.src = url + "?timestamp=" + this.timestamp
+      script.type = "text/javascript"
+      script.async = true
+
+      head.appendChild(script)
+    },
+
+    xhr: function (url, fn) {
+      var client = new XMLHttpRequest()
+      client.onreadystatechange = fn
+      client.open("GET", url + "?timestamp=" + this.timestamp)
+      client.setRequestHeader("Content-Type", "text/plain;charset=UTF-8")
+      client.send()
     },
 
     // Define an XHR handler callback function.
@@ -732,8 +757,8 @@
   }
 
   // Keep a reference to the root context.
-  // FIXME: This should be either window or Node equivalent. IE Global namespace.
-  fletcher.rootContext = this
+  // Either window or equivalent.
+  fletcher.rootContext = window || {}
 
   // Create a base namespace where modules will be loaded.
   fletcher.mainContext = {}
@@ -741,17 +766,33 @@
   // Define fletcher interface.
   var api = {
     define: function() { return fletcher.define.apply(fletcher, arguments) },
+
     require: function() { return fletcher.require.apply(fletcher, arguments) },
+
     onComplete: function() { return fletcher.onComplete.apply(fletcher, arguments) },
+
     tree: fletcher.tree,
+
     logger: logger,
-    mainContext: fletcher.mainContext,
+
+    loadedOrder: fletcher.loadedOrder,
+
+    setRootContext: function (rootContext) {
+      fletcher.rootContext = rootContext
+    },
+
+    setMainContext: function (mainContext) {
+      fletcher.mainContext = mainContext
+    },
+
     setSystemPath: function (systemPath) {
       fletcher.systemPath = systemPath
     },
+
     setTimestamp: function (timestamp) {
       fletcher.timestamp = timestamp
     },
+
     insertScriptTag: fletcher.insertScriptTag
   }
 
