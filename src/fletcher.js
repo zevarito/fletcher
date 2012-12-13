@@ -668,7 +668,7 @@
         logger.info("Net Fetch: " + url)
         url.match("\.js") ? this.insertScriptTag(module, url) : this.xhr(url, this.xhrHandler(module))
 
-      } else if (module.dependencies.length == 0) {
+      } else if (module.dependencies.length == 0 && module.waitForNamespaces.length == 1) {
 
         logger.info("Node Require: " + url)
         this.nodeRequire(module, url)
@@ -684,7 +684,7 @@
 
       if (url.match(/.js$/)) {
 
-        module.body = require(loc)
+        module.body = this.rootContext.require("./public/" + url)
 
       } else {
 
