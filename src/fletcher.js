@@ -65,10 +65,9 @@
   //
   var fletcher = {
 
-    // Indicates if we will be using Fletcher in Async or Sync way.
-    // Running in the Browser the behavior will be Async.
-    // Running in server with NodeJs the behavior will be Sync.
-    async: !(typeof module !== 'undefined' && module.exports),
+    // Indicates if we will be using Fletcher in from the Browser
+    // or in a server environment with Node.
+    browser: !(typeof module !== 'undefined' && module.exports),
 
     mainContext: null,
 
@@ -264,11 +263,11 @@
       }
     },
 
-    // Defers a function execution. Only if `async` flag value
+    // Defers a function execution. Only if `browser` flag value
     // is `true`, otherwise executes inmediatly, forcing `sync`
     // behavior.
     defer: function(fn, t) {
-      if (this.async) {
+      if (this.browser) {
         t = t || 0
         var context = this
         setTimeout(function() { fn.apply(context) }, t)
@@ -342,7 +341,7 @@
             remainingModulesCount++
           }
 
-        } else if (this.async) {
+        } else if (this.browser) {
           this.loadModule(module)
         }
       }
@@ -629,12 +628,12 @@
 
           // If we couldn't load and we are running Async declare the
           // dependency as missing.
-          } else if (!this.loadModule(moduleInTree) && this.async) {
+          } else if (!this.loadModule(moduleInTree) && this.browser) {
             logger.info("Missing: " + moduleKey)
 
           // If we couldn't load and we are running Sync on the server
           // attempt to load the module before continue.
-          } else if (!this.loadModule(moduleInTree) && !this.async) {
+          } else if (!this.loadModule(moduleInTree) && !this.browser) {
             logger.info("I'll find you: " + moduleKey)
             this.traverse()
             return // Skip to next iteration.
@@ -662,16 +661,16 @@
       if (!module.key.match(/\.[a-zA-Z]+$/))
         url = module.key + ".js"
 
-      module.fetched = true
-
-      if (this.async) {
+      if (this.browser) {
         logger.info("Net Fetch: " + url)
         url.match("\.js") ? this.insertScriptTag(module, url) : this.xhr(url, this.xhrHandler(module))
+        module.fetched = true
 
       } else if (module.dependencies.length == 0 && module.waitForNamespaces.length == 1) {
 
         logger.info("Node Require: " + url)
         this.nodeRequire(module, url)
+        module.fetched = true
       }
 
       return false
@@ -802,11 +801,13 @@
   // Define a global for module definition.
   define = api.define
 
-  // If running in Node in Sync mode export the interface.
-  if (!fletcher.async) {
+  // If running in Node export the interface.
+  if (!fletcher.browser) {
     module.exports = api
+
+  // If running in the browser define globals `require` and `fletcher`.
   } else {
-    // If running in the browser define globals `require` and `fletcher`.
+
     this["fletcher"] = api
     this["require"] = api.require
   }
