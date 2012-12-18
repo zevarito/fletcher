@@ -438,8 +438,8 @@
 
       // Has this module reached the fail threshold value?
       // Attempt to fetch it.
-      } else if (module.fails > this.failThreshold &&
-          module.dependencies.length === 0 && !module.fetched) {
+      } else if (!module.fetched && module.fails > this.failThreshold &&
+          module.dependencies.length === 0 && module.waitForNamespaces.length <= 1) {
 
         this.fetch(module)
 
