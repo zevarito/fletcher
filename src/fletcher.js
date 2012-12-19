@@ -94,7 +94,7 @@
 
     // Indicates how much attempts to be loaded a module can get before
     // try to fetch it from the network.
-    failThreshold: 5,
+    failThreshold: 2,
 
     // Append to url to force avoid cache.
     timestamp: "",
