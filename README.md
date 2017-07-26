@@ -1,5 +1,3 @@
-# WARNING: Outdated doc!
-
 # **Fletcher** is a lightweight Javascript module loader
 
 It features Async behavior on browser side and Sync behavior when used on the server.
@@ -7,8 +5,6 @@ It aims to have the only requirement of being included before being used, even i
 that doesn't conform the specs of module definition.
 This library intent to be AMDjs compliant and implements most of its fatures but currently it **is not** 100% compliant.
 Read more about [AMDjs](http://github.com/amdjs).
-
-It is still a work in progress.
 
 ## Features
 
